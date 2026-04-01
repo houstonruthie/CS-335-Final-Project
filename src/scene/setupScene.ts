@@ -1,31 +1,28 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export function setupScene(canvas: HTMLCanvasElement) {
-  // Create scene
+  // Scene, camera, renderer, cube setup (same as before)...
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x1a1a1a)
   
-  // Create camera
   const camera = new THREE.PerspectiveCamera(
-    75,                                    // Field of view
-    window.innerWidth / window.innerHeight, // Aspect ratio
-    0.1,                                   // Near clipping plane
-    1000                                   // Far clipping plane
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
   )
   camera.position.z = 3
   
-  // Create renderer
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.setPixelRatio(window.devicePixelRatio)
   
-  // Create cube
   const geometry = new THREE.BoxGeometry(1, 1, 1)
-  const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 })
+  const material = new THREE.MeshPhongMaterial({ color: 0xFF14EF, shininess: 100 })
   const cube = new THREE.Mesh(geometry, material)
   scene.add(cube)
   
-  // Add lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
   scene.add(ambientLight)
   
@@ -33,5 +30,13 @@ export function setupScene(canvas: HTMLCanvasElement) {
   directionalLight.position.set(5, 5, 5)
   scene.add(directionalLight)
   
-  return { scene, camera, renderer, cube }
+  // Initialize OrbitControls
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true  // Smooth rotation/zoom
+  controls.dampingFactor = 0.05
+  controls.autoRotate = false    // No auto-rotation
+  controls.enableZoom = true
+  controls.enablePan = true
+  
+  return { scene, camera, renderer, cube, controls }
 }
