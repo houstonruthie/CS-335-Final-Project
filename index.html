@@ -1,15 +1,21 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cs-335-final-project</title>
+    <title>Texture Painter</title>
+    <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <div id="app">
-      <canvas id="canvas"></canvas>
+    <div id="ui-panel">
+      <label for="colorPicker">Brush Color</label>
+      <input type="color" id="colorPicker" value="#00aaff" />
+
+      <label for="brushSize">Brush Size</label>
+      <input type="range" id="brushSize" min="5" max="100" value="30" />
+      <span id="brushSizeValue">30</span>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+
+    <canvas id="canvas"></canvas>
   </body>
 </html>

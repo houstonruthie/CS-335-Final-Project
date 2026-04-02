@@ -1,9 +1,19 @@
+import "./style.css";
+import * as THREE from "three";
 import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (!canvas) {
   throw new Error("No canvas found");
+}
+
+const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
+const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
+const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
+
+if (!colorPicker || !brushSizeSlider || !brushSizeValue) {
+  throw new Error("Missing UI controls.");
 }
 
 const {
@@ -18,26 +28,48 @@ const {
 
 const sceneRaycaster = new SceneRaycaster();
 
+// Painting state
 let isPainting = false;
+let lastPaintUV: THREE.Vector2 | null = null;
 
+// Brush settings
+let brushSize = Number(brushSizeSlider.value);
+let brushColor = colorPicker.value;
+let brushOpacity = 0.9;
+
+// Rotation state
 let rotateLeft = false;
 let rotateRight = false;
 let rotateUp = false;
 let rotateDown = false;
 
+// Initial paint
 painter.paint(0.5, 0.5, "#ff0000", 60, 1);
 canvasTexture.needsUpdate = true;
 
+// UI event listeners
+colorPicker.addEventListener("input", () => {
+  brushColor = colorPicker.value;
+});
+
+brushSizeSlider.addEventListener("input", () => {
+  brushSize = Number(brushSizeSlider.value);
+  brushSizeValue.textContent = brushSizeSlider.value;
+});
+
+// Mouse events
 canvas.addEventListener("mousedown", (event: MouseEvent) => {
   isPainting = true;
 
   const uv = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
   if (!uv) {
+    lastPaintUV = null;
     return;
   }
 
-  painter.paint(uv.x, uv.y, "#00aaff", 30, 0.9);
+  painter.paint(uv.x, uv.y, brushColor, brushSize, brushOpacity);
   canvasTexture.needsUpdate = true;
+  lastPaintUV = uv;
 });
 
 canvas.addEventListener("mousemove", (event: MouseEvent) => {
@@ -50,14 +82,22 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
     return;
   }
 
-  painter.paint(uv.x, uv.y, "#00aaff", 30, 0.9);
+  if (lastPaintUV) {
+    painter.paintStroke(lastPaintUV, uv, brushColor, brushSize, brushOpacity);
+  } else {
+    painter.paint(uv.x, uv.y, brushColor, brushSize, brushOpacity);
+  }
+
   canvasTexture.needsUpdate = true;
+  lastPaintUV = uv;
 });
 
 window.addEventListener("mouseup", () => {
   isPainting = false;
+  lastPaintUV = null;
 });
 
+// Keyboard controls for cube rotation
 window.addEventListener("keydown", (event: KeyboardEvent) => {
   if (event.key === "ArrowLeft") {
     rotateLeft = true;
