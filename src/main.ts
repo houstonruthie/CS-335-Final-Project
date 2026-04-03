@@ -11,6 +11,8 @@ if (!canvas) {
 const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
 const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
 const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
+const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
+const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
 
 if (!colorPicker || !brushSizeSlider || !brushSizeValue) {
   throw new Error("Missing UI controls.");
@@ -35,7 +37,7 @@ let lastPaintUV: THREE.Vector2 | null = null;
 // Brush settings
 let brushSize = Number(brushSizeSlider.value);
 let brushColor = colorPicker.value;
-let brushOpacity = 0.9;
+let brushOpacity = 1.0;
 
 // Rotation state
 let rotateLeft = false;
@@ -55,6 +57,11 @@ colorPicker.addEventListener("input", () => {
 brushSizeSlider.addEventListener("input", () => {
   brushSize = Number(brushSizeSlider.value);
   brushSizeValue.textContent = brushSizeSlider.value;
+});
+
+brushOpacitySlider.addEventListener("input", () => {
+    brushOpacity = Number(brushOpacitySlider.value) / 100.0;
+    brushOpacityValue.textContent = brushOpacitySlider.value;
 });
 
 // Mouse events
