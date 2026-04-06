@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TextureCanvas } from "../painting/textureCanvas";
 import { Painter } from "../painting/painter";
+import brickTexture from "../assets/brick.jpg";
 
 export function setupScene(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
@@ -19,19 +20,32 @@ export function setupScene(canvas: HTMLCanvasElement) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
 
-  const textureCanvas = new TextureCanvas(1024, 1024);
-  const painter = new Painter(textureCanvas);
+  // Create 6 independent texture canvases (one per cube face)
+  const textureCanvases = [
+    new TextureCanvas(512, 512),  // Face 0 (right)
+    new TextureCanvas(512, 512),  // Face 1 (left)
+    new TextureCanvas(512, 512),  // Face 2 (top)
+    new TextureCanvas(512, 512),  // Face 3 (bottom)
+    new TextureCanvas(512, 512),  // Face 4 (front)
+    new TextureCanvas(512, 512)   // Face 5 (back)
+  ];
 
-  const canvasTexture = new THREE.CanvasTexture(textureCanvas.getCanvas());
-  canvasTexture.needsUpdate = true;
+  // Create painters for each canvas
+  const painters = textureCanvases.map(tc => new Painter(tc));
 
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshPhongMaterial({
-    map: canvasTexture,
-    shininess: 100
+  // Create materials for each face
+  const materials = textureCanvases.map(tc => {
+    const canvasTexture = new THREE.CanvasTexture(tc.getCanvas());
+    canvasTexture.needsUpdate = true;
+    return new THREE.MeshPhongMaterial({
+      map: canvasTexture,
+      shininess: 100
+    });
   });
 
-  const cube = new THREE.Mesh(geometry, material);
+  // Create cube with multiple materials (one per face)
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const cube = new THREE.Mesh(geometry, materials);
   scene.add(cube);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -50,13 +64,19 @@ export function setupScene(canvas: HTMLCanvasElement) {
   controls.enablePan = false;
   controls.enableZoom = true;
 
+  // Load brick texture
+  const textureLoader = new THREE.TextureLoader();
+  const brickMap = textureLoader.load(brickTexture);
+
   return {
     scene,
     camera,
     renderer,
     cube,
     controls,
-    painter,
-    canvasTexture
+    painters,
+    textureCanvases,
+    materials,
+    brickMap
   };
 }

@@ -24,8 +24,10 @@ const {
   renderer,
   cube,
   controls,
-  painter,
-  canvasTexture
+  painters,
+  textureCanvases,
+  materials,
+  brickMap
 } = setupScene(canvas);
 
 const sceneRaycaster = new SceneRaycaster();
@@ -33,6 +35,7 @@ const sceneRaycaster = new SceneRaycaster();
 // Painting state
 let isPainting = false;
 let lastPaintUV: THREE.Vector2 | null = null;
+let currentFaceIndex = 0;
 
 // Brush settings
 let brushSize = Number(brushSizeSlider.value);
@@ -45,9 +48,15 @@ let rotateRight = false;
 let rotateUp = false;
 let rotateDown = false;
 
-// Initial paint
-painter.paint(0.5, 0.5, "#ff0000", 60, 1);
-canvasTexture.needsUpdate = true;
+// Initial paint on each face
+painters.forEach((painter, index) => {
+  painter.paint(0.5, 0.5, "#ff0000", 60, 1);
+});
+materials.forEach(material => {
+  if (material.map) {
+    material.map.needsUpdate = true;
+  }
+});
 
 // UI event listeners
 colorPicker.addEventListener("input", () => {
@@ -64,19 +73,68 @@ brushOpacitySlider.addEventListener("input", () => {
     brushOpacityValue.textContent = brushOpacitySlider.value;
 });
 
+// Apply brick texture button
+const applyBrickBtn = document.getElementById("applyBrickBtn") as HTMLButtonElement;
+applyBrickBtn.addEventListener("click", () => {
+  // Load brick image
+  const brickImg = new Image();
+  brickImg.src = new URL("./assets/brick.jpg", import.meta.url).href;
+  brickImg.onload = () => {
+    // Draw brick onto each face's canvas
+    textureCanvases.forEach((textureCanvas, index) => {
+      const ctx = textureCanvas.getCanvas().getContext("2d")!;
+      ctx.drawImage(brickImg, 0, 0, 512, 512);
+    });
+
+    // Update all materials to reflect the change
+    materials.forEach(material => {
+      if (material.map) {
+        material.map.needsUpdate = true;
+      }
+    });
+  };
+});
+
+// Apply fabric stripes texture button
+const applyFabricBtn = document.getElementById("applyFabricBtn") as HTMLButtonElement;
+applyFabricBtn.addEventListener("click", () => {
+  // Load fabric stripes image
+  const fabricImg = new Image();
+  fabricImg.src = new URL("./assets/fabric-stripes.jpg", import.meta.url).href;
+  fabricImg.onload = () => {
+    // Draw fabric stripes onto each face's canvas
+    textureCanvases.forEach((textureCanvas, index) => {
+      const ctx = textureCanvas.getCanvas().getContext("2d")!;
+      ctx.drawImage(fabricImg, 0, 0, 512, 512);
+    });
+
+    // Update all materials to reflect the change
+    materials.forEach(material => {
+      if (material.map) {
+        material.map.needsUpdate = true;
+      }
+    });
+  };
+});
+
 // Mouse events
 canvas.addEventListener("mousedown", (event: MouseEvent) => {
   isPainting = true;
 
-  const uv = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
-  if (!uv) {
+  const intersection = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
+  if (!intersection) {
     lastPaintUV = null;
     return;
   }
 
-  painter.paint(uv.x, uv.y, brushColor, brushSize, brushOpacity);
-  canvasTexture.needsUpdate = true;
-  lastPaintUV = uv;
+  currentFaceIndex = intersection.faceIndex;
+  painters[currentFaceIndex].paint(intersection.uv.x, intersection.uv.y, brushColor, brushSize, brushOpacity);
+  
+  if (materials[currentFaceIndex].map) {
+    materials[currentFaceIndex].map!.needsUpdate = true;
+  }
+  
+  lastPaintUV = intersection.uv;
 });
 
 canvas.addEventListener("mousemove", (event: MouseEvent) => {
@@ -84,19 +142,27 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
     return;
   }
 
-  const uv = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
-  if (!uv) {
+  const intersection = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
+  if (!intersection) {
+    return;
+  }
+
+  // Only continue painting on the same face
+  if (intersection.faceIndex !== currentFaceIndex) {
     return;
   }
 
   if (lastPaintUV) {
-    painter.paintStroke(lastPaintUV, uv, brushColor, brushSize, brushOpacity);
+    painters[currentFaceIndex].paintStroke(lastPaintUV, intersection.uv, brushColor, brushSize, brushOpacity);
   } else {
-    painter.paint(uv.x, uv.y, brushColor, brushSize, brushOpacity);
+    painters[currentFaceIndex].paint(intersection.uv.x, intersection.uv.y, brushColor, brushSize, brushOpacity);
   }
 
-  canvasTexture.needsUpdate = true;
-  lastPaintUV = uv;
+  if (materials[currentFaceIndex].map) {
+    materials[currentFaceIndex].map!.needsUpdate = true;
+  }
+  
+  lastPaintUV = intersection.uv;
 });
 
 window.addEventListener("mouseup", () => {
@@ -161,3 +227,4 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 });
+
