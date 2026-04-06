@@ -14,7 +14,7 @@ export class SceneRaycaster {
     canvas: HTMLCanvasElement,
     camera: THREE.Camera,
     object: THREE.Object3D
-  ): THREE.Vector2 | null {
+  ): { uv: THREE.Vector2; faceIndex: number } | null {
     const rect = canvas.getBoundingClientRect();
 
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -30,10 +30,16 @@ export class SceneRaycaster {
 
     const hit = intersects[0];
 
-    if (!hit.uv) {
+    if (!hit.uv || hit.face == null) {
       return null;
     }
 
-    return hit.uv.clone();
+    // Get material index which corresponds to cube face
+    const faceIndex = hit.face.materialIndex !== undefined ? hit.face.materialIndex : 0;
+
+    return {
+      uv: hit.uv.clone(),
+      faceIndex: faceIndex
+    };
   }
 }
