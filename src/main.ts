@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 
+type ObjectType = "cube" | "sphere";
 type ToolMode = "paint" | "finger";
 type BrushType = "soft" | "hardbrush" | "spray";
 
@@ -11,22 +12,24 @@ if (!canvas) {
   throw new Error("No canvas found");
 }
 
+const objectTypeSelect = document.getElementById("objectType") as HTMLSelectElement;
+const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
+const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
 const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
 const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
 const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
 const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
 const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
-const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
-const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
 
 if (
+  !objectTypeSelect ||
+  !toolModeSelect ||
+  !brushTypeSelect ||
   !colorPicker ||
   !brushSizeSlider ||
   !brushSizeValue ||
   !brushOpacitySlider ||
-  !brushOpacityValue ||
-  !toolModeSelect ||
-  !brushTypeSelect
+  !brushOpacityValue
 ) {
   throw new Error("Missing UI controls.");
 }
@@ -35,11 +38,15 @@ const {
   scene,
   camera,
   renderer,
-  cube,
   controls,
-  painters,
-  textureCanvases,
-  materials
+  cube,
+  sphere,
+  cubePainters,
+  spherePainter,
+  cubeTextureCanvases,
+  sphereTextureCanvas,
+  cubeMaterials,
+  sphereMaterial
 } = setupScene(canvas);
 
 const sceneRaycaster = new SceneRaycaster();
@@ -49,12 +56,15 @@ let isPainting = false;
 let lastPaintUV: THREE.Vector2 | null = null;
 let currentFaceIndex = 0;
 
+// UI state
+let currentObjectType: ObjectType = objectTypeSelect.value as ObjectType;
+let currentTool: ToolMode = toolModeSelect.value as ToolMode;
+let currentBrushType: BrushType = brushTypeSelect.value as BrushType;
+
 // Brush settings
 let brushSize = Number(brushSizeSlider.value);
 let brushColor = colorPicker.value;
 let brushOpacity = Number(brushOpacitySlider.value) / 100.0;
-let currentTool: ToolMode = toolModeSelect.value as ToolMode;
-let currentBrushType: BrushType = brushTypeSelect.value as BrushType;
 
 // Rotation state
 let rotateLeft = false;
@@ -62,18 +72,63 @@ let rotateRight = false;
 let rotateUp = false;
 let rotateDown = false;
 
-// Initial paint on each face
-painters.forEach((painter) => {
-  painter.paint(0.5, 0.5, "#ff0000", 60, 1, "soft");
-});
 
-materials.forEach((material) => {
+
+
+cubeMaterials.forEach((material) => {
   if (material.map) {
     material.map.needsUpdate = true;
   }
 });
 
+
+if (sphereMaterial.map) {
+  sphereMaterial.map.needsUpdate = true;
+}
+
+function getActiveObject(): THREE.Object3D {
+  return currentObjectType === "cube" ? cube : sphere;
+}
+
+function updateActiveTexture(faceIndex?: number): void {
+  if (currentObjectType === "cube") {
+    if (
+      faceIndex !== undefined &&
+      cubeMaterials[faceIndex] &&
+      cubeMaterials[faceIndex].map
+    ) {
+      cubeMaterials[faceIndex].map!.needsUpdate = true;
+    }
+  } else {
+    if (sphereMaterial.map) {
+      sphereMaterial.map.needsUpdate = true;
+    }
+  }
+}
+
+function updateVisibleObject(): void {
+  cube.visible = currentObjectType === "cube";
+  sphere.visible = currentObjectType === "sphere";
+}
+
+updateVisibleObject();
+
 // UI event listeners
+objectTypeSelect.addEventListener("change", () => {
+  currentObjectType = objectTypeSelect.value as ObjectType;
+  updateVisibleObject();
+  lastPaintUV = null;
+  isPainting = false;
+});
+
+toolModeSelect.addEventListener("change", () => {
+  currentTool = toolModeSelect.value as ToolMode;
+});
+
+brushTypeSelect.addEventListener("change", () => {
+  currentBrushType = brushTypeSelect.value as BrushType;
+});
+
 colorPicker.addEventListener("input", () => {
   brushColor = colorPicker.value;
 });
@@ -88,14 +143,6 @@ brushOpacitySlider.addEventListener("input", () => {
   brushOpacityValue.textContent = brushOpacitySlider.value;
 });
 
-toolModeSelect.addEventListener("change", () => {
-  currentTool = toolModeSelect.value as ToolMode;
-});
-
-brushTypeSelect.addEventListener("change", () => {
-  currentBrushType = brushTypeSelect.value as BrushType;
-});
-
 // Apply brick texture button
 const applyBrickBtn = document.getElementById("applyBrickBtn") as HTMLButtonElement | null;
 if (applyBrickBtn) {
@@ -104,17 +151,33 @@ if (applyBrickBtn) {
     brickImg.src = new URL("./assets/brick.jpg", import.meta.url).href;
 
     brickImg.onload = () => {
-      textureCanvases.forEach((textureCanvas) => {
-        const ctx = textureCanvas.getCanvas().getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(brickImg, 0, 0, 512, 512);
-      });
+      if (currentObjectType === "cube") {
+        cubeTextureCanvases.forEach((textureCanvas) => {
+          const ctx = textureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(brickImg, 0, 0, 512, 512);
+        });
 
-      materials.forEach((material) => {
-        if (material.map) {
-          material.map.needsUpdate = true;
+        cubeMaterials.forEach((material) => {
+          if (material.map) {
+            material.map.needsUpdate = true;
+          }
+        });
+      } else {
+        const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(
+          brickImg,
+          0,
+          0,
+          sphereTextureCanvas.getWidth(),
+          sphereTextureCanvas.getHeight()
+        );
+
+        if (sphereMaterial.map) {
+          sphereMaterial.map.needsUpdate = true;
         }
-      });
+      }
     };
   });
 }
@@ -127,17 +190,33 @@ if (applyFabricBtn) {
     fabricImg.src = new URL("./assets/fabric-stripes.jpg", import.meta.url).href;
 
     fabricImg.onload = () => {
-      textureCanvases.forEach((textureCanvas) => {
-        const ctx = textureCanvas.getCanvas().getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(fabricImg, 0, 0, 512, 512);
-      });
+      if (currentObjectType === "cube") {
+        cubeTextureCanvases.forEach((textureCanvas) => {
+          const ctx = textureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(fabricImg, 0, 0, 512, 512);
+        });
 
-      materials.forEach((material) => {
-        if (material.map) {
-          material.map.needsUpdate = true;
+        cubeMaterials.forEach((material) => {
+          if (material.map) {
+            material.map.needsUpdate = true;
+          }
+        });
+      } else {
+        const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(
+          fabricImg,
+          0,
+          0,
+          sphereTextureCanvas.getWidth(),
+          sphereTextureCanvas.getHeight()
+        );
+
+        if (sphereMaterial.map) {
+          sphereMaterial.map.needsUpdate = true;
         }
-      });
+      }
     };
   });
 }
@@ -146,26 +225,44 @@ if (applyFabricBtn) {
 canvas.addEventListener("mousedown", (event: MouseEvent) => {
   isPainting = true;
 
-  const intersection = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
+  const activeObject = getActiveObject();
+  const intersection = sceneRaycaster.getIntersectionUV(
+    event,
+    canvas,
+    camera,
+    activeObject
+  );
+
   if (!intersection) {
     lastPaintUV = null;
     return;
   }
 
-  currentFaceIndex = intersection.faceIndex;
+  if (currentObjectType === "cube") {
+    currentFaceIndex = intersection.faceIndex;
 
-  if (currentTool === "paint") {
-    painters[currentFaceIndex].paint(
-      intersection.uv.x,
-      intersection.uv.y,
-      brushColor,
-      brushSize,
-      brushOpacity,
-      currentBrushType
-    );
-
-    if (materials[currentFaceIndex].map) {
-      materials[currentFaceIndex].map!.needsUpdate = true;
+    if (currentTool === "paint") {
+      cubePainters[currentFaceIndex].paint(
+        intersection.uv.x,
+        intersection.uv.y,
+        brushColor,
+        brushSize,
+        brushOpacity,
+        currentBrushType
+      );
+      updateActiveTexture(currentFaceIndex);
+    }
+  } else {
+    if (currentTool === "paint") {
+      spherePainter.paint(
+        intersection.uv.x,
+        intersection.uv.y,
+        brushColor,
+        brushSize,
+        brushOpacity,
+        currentBrushType
+      );
+      updateActiveTexture();
     }
   }
 
@@ -177,40 +274,45 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
     return;
   }
 
-  const intersection = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
+  const activeObject = getActiveObject();
+  const intersection = sceneRaycaster.getIntersectionUV(
+    event,
+    canvas,
+    camera,
+    activeObject
+  );
+
   if (!intersection) {
     return;
   }
 
-  if (intersection.faceIndex !== currentFaceIndex) {
-    return;
-  }
-
-  if (lastPaintUV) {
-    if (currentTool === "paint") {
-      painters[currentFaceIndex].paintStroke(
-        lastPaintUV,
-        intersection.uv,
-        brushColor,
-        brushSize,
-        brushOpacity,
-        currentBrushType
-      );
-    } else if (currentTool === "finger") {
-      painters[currentFaceIndex].smudgeStroke(
-        lastPaintUV,
-        intersection.uv,
-        brushSize,
-        0.5
-      );
+  if (currentObjectType === "cube") {
+    if (intersection.faceIndex !== currentFaceIndex) {
+      return;
     }
 
-    if (materials[currentFaceIndex].map) {
-      materials[currentFaceIndex].map!.needsUpdate = true;
-    }
-  } else {
-    if (currentTool === "paint") {
-      painters[currentFaceIndex].paint(
+    if (lastPaintUV) {
+      if (currentTool === "paint") {
+        cubePainters[currentFaceIndex].paintStroke(
+          lastPaintUV,
+          intersection.uv,
+          brushColor,
+          brushSize,
+          brushOpacity,
+          currentBrushType
+        );
+      } else if (currentTool === "finger") {
+        cubePainters[currentFaceIndex].smudgeStroke(
+          lastPaintUV,
+          intersection.uv,
+          brushSize,
+          0.5
+        );
+      }
+
+      updateActiveTexture(currentFaceIndex);
+    } else if (currentTool === "paint") {
+      cubePainters[currentFaceIndex].paint(
         intersection.uv.x,
         intersection.uv.y,
         brushColor,
@@ -218,10 +320,39 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
         brushOpacity,
         currentBrushType
       );
-
-      if (materials[currentFaceIndex].map) {
-        materials[currentFaceIndex].map!.needsUpdate = true;
+      updateActiveTexture(currentFaceIndex);
+    }
+  } else {
+    if (lastPaintUV) {
+      if (currentTool === "paint") {
+        spherePainter.paintStroke(
+          lastPaintUV,
+          intersection.uv,
+          brushColor,
+          brushSize,
+          brushOpacity,
+          currentBrushType
+        );
+      } else if (currentTool === "finger") {
+        spherePainter.smudgeStroke(
+          lastPaintUV,
+          intersection.uv,
+          brushSize,
+          0.5
+        );
       }
+
+      updateActiveTexture();
+    } else if (currentTool === "paint") {
+      spherePainter.paint(
+        intersection.uv.x,
+        intersection.uv.y,
+        brushColor,
+        brushSize,
+        brushOpacity,
+        currentBrushType
+      );
+      updateActiveTexture();
     }
   }
 
@@ -233,7 +364,7 @@ window.addEventListener("mouseup", () => {
   lastPaintUV = null;
 });
 
-// Keyboard controls for cube rotation
+// Keyboard controls for object rotation
 window.addEventListener("keydown", (event: KeyboardEvent) => {
   if (event.key === "ArrowLeft") {
     rotateLeft = true;
@@ -262,18 +393,19 @@ function animate() {
   requestAnimationFrame(animate);
 
   const rotationSpeed = 0.02;
+  const activeObject = getActiveObject();
 
   if (rotateLeft) {
-    cube.rotation.y -= rotationSpeed;
+    activeObject.rotation.y -= rotationSpeed;
   }
   if (rotateRight) {
-    cube.rotation.y += rotationSpeed;
+    activeObject.rotation.y += rotationSpeed;
   }
   if (rotateUp) {
-    cube.rotation.x -= rotationSpeed;
+    activeObject.rotation.x -= rotationSpeed;
   }
   if (rotateDown) {
-    cube.rotation.x += rotationSpeed;
+    activeObject.rotation.x += rotationSpeed;
   }
 
   controls.update();
