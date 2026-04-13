@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TextureCanvas } from "../painting/textureCanvas";
 import { Painter } from "../painting/painter";
-import brickTexture from "../assets/brick.jpg";
 
 export function setupScene(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
@@ -20,40 +19,15 @@ export function setupScene(canvas: HTMLCanvasElement) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
 
-  // Create 6 independent texture canvases (one per cube face)
-  const textureCanvases = [
-    new TextureCanvas(512, 512),  // Face 0 (right)
-    new TextureCanvas(512, 512),  // Face 1 (left)
-    new TextureCanvas(512, 512),  // Face 2 (top)
-    new TextureCanvas(512, 512),  // Face 3 (bottom)
-    new TextureCanvas(512, 512),  // Face 4 (front)
-    new TextureCanvas(512, 512)   // Face 5 (back)
-  ];
-
-  // Create painters for each canvas
-  const painters = textureCanvases.map(tc => new Painter(tc));
-
-  // Create materials for each face
-  const materials = textureCanvases.map(tc => {
-    const canvasTexture = new THREE.CanvasTexture(tc.getCanvas());
-    canvasTexture.needsUpdate = true;
-    return new THREE.MeshPhongMaterial({
-      map: canvasTexture,
-      shininess: 100
-    });
-  });
-
-  // Create cube with multiple materials (one per face)
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const cube = new THREE.Mesh(geometry, materials);
-  scene.add(cube);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  directionalLight.position.set(5, 5, 5);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // stronger
+  directionalLight.position.set(3, 5, 4);
   scene.add(directionalLight);
+  const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  backLight.position.set(-3, -5, -4);
+  scene.add(backLight);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -64,19 +38,67 @@ export function setupScene(canvas: HTMLCanvasElement) {
   controls.enablePan = false;
   controls.enableZoom = true;
 
-  // Load brick texture
-  const textureLoader = new THREE.TextureLoader();
-  const brickMap = textureLoader.load(brickTexture);
+  // -----------------------------
+  // Cube setup
+  // -----------------------------
+  const cubeTextureCanvases = Array.from(
+    { length: 6 },
+    () => new TextureCanvas(512, 512)
+  );
+
+  const cubePainters = cubeTextureCanvases.map(
+    (textureCanvas) => new Painter(textureCanvas)
+  );
+
+  const cubeMaterials = cubeTextureCanvases.map((textureCanvas) => {
+    const canvasTexture = new THREE.CanvasTexture(textureCanvas.getCanvas());
+    canvasTexture.needsUpdate = true;
+
+    return new THREE.MeshPhongMaterial({
+      map: canvasTexture,
+      shininess: 100
+    });
+  });
+
+  const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const cube = new THREE.Mesh(cubeGeometry, cubeMaterials);
+  cube.visible = true;
+  scene.add(cube);
+
+  // -----------------------------
+  // Sphere setup
+  // -----------------------------
+  const sphereTextureCanvas = new TextureCanvas(1024, 1024);
+  const spherePainter = new Painter(sphereTextureCanvas);
+
+  const sphereCanvasTexture = new THREE.CanvasTexture(
+    sphereTextureCanvas.getCanvas()
+  );
+  sphereCanvasTexture.needsUpdate = true;
+
+  const sphereMaterial = new THREE.MeshPhongMaterial({
+  map: sphereCanvasTexture,
+  shininess: 100,
+  color: 0xdddddd // light gray base
+});
+
+  const sphereGeometry = new THREE.SphereGeometry(0.85, 64, 64);
+  const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  sphere.visible = false;
+  scene.add(sphere);
 
   return {
     scene,
     camera,
     renderer,
-    cube,
     controls,
-    painters,
-    textureCanvases,
-    materials,
-    brickMap
+    cube,
+    sphere,
+    cubePainters,
+    spherePainter,
+    cubeTextureCanvases,
+    sphereTextureCanvas,
+    cubeMaterials,
+    sphereMaterial
   };
 }
