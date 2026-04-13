@@ -7,21 +7,24 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <div id="ui-panel">
-      <label for="colorPicker">Brush Color</label>
-      <input type="color" id="colorPicker" value="#00aaff" />
+      <div id="ui-panel">
+          <label for="colorPicker">Brush Color</label>
+          <input type="color" id="colorPicker" value="#00aaff" />
 
-      <label for="brushSize">Brush Size</label>
-      <input type="range" id="brushSize" min="5" max="100" value="30" />
-      <span id="brushSizeValue">30</span>
+          <label for="brushSize">Brush Size</label>
+          <input type="range" id="brushSize" min="5" max="100" value="30" />
+          <span id="brushSizeValue">30</span>
 
-      <label for="opacity">Opacity</label>
-      <input type="range" id="opacity" min="0" max="100" value="100" />
-      <span id="brushOpacityValue">100</span>
+          <label for="opacity">Opacity</label>
+          <input type="range" id="opacity" min="0" max="100" value="100" />
+          <span id="brushOpacityValue">100</span>
 
-      <label for="clear">Clear</label>
-      <input type="button" id="clearBtn" value="Clear" />
-    </div>
+          <label for="clear">Clear</label>
+          <input type="button" id="clearBtn" value="Clear" />
+
+          <input type="button" id="undoBtn" value="Undo" />
+          <input type="button" id="redoBtn" value="Redo" />
+      </div>
 
     <canvas id="canvas"></canvas>
   </body>

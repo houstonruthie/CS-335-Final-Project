@@ -13,6 +13,9 @@ const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement
 const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
 const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
 const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
+const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
+const undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
+const redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;
 
 if (!colorPicker || !brushSizeSlider || !brushSizeValue) {
     throw new Error("Missing UI controls.");
@@ -44,6 +47,10 @@ let rotateLeft = false;
 let rotateRight = false;
 let rotateUp = false;
 let rotateDown = false;
+
+// stacks for undo and redo
+let undoStack: ImageData[] = [];
+let redoStack: ImageData[] = [];
 
 // Initial paint
 painter.paint(0.5, 0.5, "#ff0000", 60, 1);
@@ -84,6 +91,13 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
         return;
     }
 
+    // capture state before painting for undo stack
+    const snapshot = painter.getTextureCanvas().getImageData();
+    undoStack.push(snapshot);
+
+    // Clear redo stack 
+    redoStack = [];
+
     const uv = sceneRaycaster.getIntersectionUV(event, canvas, camera, cube);
     if (!uv) {
         return;
@@ -98,6 +112,7 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
     canvasTexture.needsUpdate = true;
     lastPaintUV = uv;
 });
+
 
 window.addEventListener("mouseup", () => {
     isPainting = false;
@@ -162,7 +177,6 @@ window.addEventListener("resize", () => {
     renderer.setSize(width, height);
 });
 
-const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
 
 clearBtn.addEventListener("click", () => {
     const isConfirmed: boolean = window.confirm("Are you sure you want to clear your texture?");
@@ -174,3 +188,40 @@ clearBtn.addEventListener("click", () => {
         console.log("User clicked Cancel");
     }
 });
+
+window.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.ctrlKey && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+
+        if (event.shiftKey) {
+            redo(); // Ctrl + Shift + Z
+        } else {
+            undo(); // Ctrl + Z
+        }
+    }
+});
+
+undoBtn.addEventListener("click", undo);
+redoBtn.addEventListener("click", redo);
+
+function undo() {
+    if (undoStack.length === 0) return;
+
+    const current = painter.getTextureCanvas().getImageData();
+    redoStack.push(current);
+
+    const previous = undoStack.pop()!;
+    painter.getTextureCanvas().setImageData(previous);
+    canvasTexture.needsUpdate = true;
+}
+
+function redo() {
+    if (redoStack.length === 0) return;
+
+    const current = painter.getTextureCanvas().getImageData();
+    undoStack.push(current);
+
+    const next = redoStack.pop()!;
+    painter.getTextureCanvas().setImageData(next);
+    canvasTexture.needsUpdate = true;
+}
