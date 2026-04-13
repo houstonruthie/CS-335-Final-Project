@@ -72,19 +72,21 @@ let rotateRight = false;
 let rotateUp = false;
 let rotateDown = false;
 
-
-
-
-cubeMaterials.forEach((material) => {
-  if (material.map) {
-    material.map.needsUpdate = true;
-  }
+// Brush preview
+const previewGeometry = new THREE.RingGeometry(0.02, 0.025, 40);
+const previewMaterial = new THREE.MeshBasicMaterial({
+  color: 0x111111,
+  transparent: true,
+  opacity: 0.75,
+  side: THREE.DoubleSide
 });
+const brushPreview = new THREE.Mesh(previewGeometry, previewMaterial);
+brushPreview.visible = false;
+scene.add(brushPreview);
 
-
-if (sphereMaterial.map) {
-  sphereMaterial.map.needsUpdate = true;
-}
+// Ray helper for preview positioning
+const previewRaycaster = new THREE.Raycaster();
+const previewMouse = new THREE.Vector2();
 
 function getActiveObject(): THREE.Object3D {
   return currentObjectType === "cube" ? cube : sphere;
@@ -109,6 +111,46 @@ function updateActiveTexture(faceIndex?: number): void {
 function updateVisibleObject(): void {
   cube.visible = currentObjectType === "cube";
   sphere.visible = currentObjectType === "sphere";
+  brushPreview.visible = false;
+}
+
+function updateBrushPreview(event: MouseEvent): void {
+  const activeObject = getActiveObject();
+  const rect = canvas.getBoundingClientRect();
+
+  previewMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  previewMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  previewRaycaster.setFromCamera(previewMouse, camera);
+  const intersects = previewRaycaster.intersectObject(activeObject);
+
+  if (intersects.length === 0) {
+    brushPreview.visible = false;
+    return;
+  }
+
+  const hit = intersects[0];
+  if (!hit.point || !hit.face?.normal) {
+    brushPreview.visible = false;
+    return;
+  }
+
+  // Position preview slightly above the surface to avoid z-fighting
+  const normal = hit.face.normal.clone();
+  const worldNormal = normal.transformDirection(activeObject.matrixWorld);
+  const previewPosition = hit.point.clone().add(worldNormal.multiplyScalar(0.01));
+
+  brushPreview.position.copy(previewPosition);
+
+  // Make preview face outward from the object surface
+  const lookTarget = previewPosition.clone().add(worldNormal);
+  brushPreview.lookAt(lookTarget);
+
+  // Scale preview with brush size
+  const scale = brushSize * 0.025;
+brushPreview.scale.set(scale, scale, scale);
+
+  brushPreview.visible = true;
 }
 
 updateVisibleObject();
@@ -270,6 +312,8 @@ canvas.addEventListener("mousedown", (event: MouseEvent) => {
 });
 
 canvas.addEventListener("mousemove", (event: MouseEvent) => {
+  updateBrushPreview(event);
+
   if (!isPainting) {
     return;
   }
@@ -357,6 +401,10 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
   }
 
   lastPaintUV = intersection.uv;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  brushPreview.visible = false;
 });
 
 window.addEventListener("mouseup", () => {

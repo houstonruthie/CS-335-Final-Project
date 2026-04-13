@@ -42,7 +42,7 @@ export class TextureCanvas {
     if (brushType === "soft") {
       this.paintSoftBrush(x, y, color, radius, opacity);
     } else if (brushType === "hardbrush") {
-      this.painthardbrushBrush(x, y, color, radius, opacity);
+      this.paintHardBrush(x, y, color, radius, opacity);
     } else if (brushType === "spray") {
       this.paintSprayBrush(x, y, color, radius, opacity);
     }
@@ -56,10 +56,12 @@ export class TextureCanvas {
     opacity: number
   ): void {
     const transparentColor = this.hexToRgba(color, 0);
+    const midColor = this.hexToRgba(color, 0.35);
     const solidColor = this.hexToRgba(color, 1);
 
     const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
     gradient.addColorStop(0, solidColor);
+    gradient.addColorStop(0.7, midColor);
     gradient.addColorStop(1, transparentColor);
 
     this.ctx.save();
@@ -71,7 +73,7 @@ export class TextureCanvas {
     this.ctx.restore();
   }
 
-  private painthardbrushBrush(
+  private paintHardBrush(
     x: number,
     y: number,
     color: string,
@@ -82,7 +84,7 @@ export class TextureCanvas {
     this.ctx.globalAlpha = opacity;
     this.ctx.fillStyle = color;
     this.ctx.beginPath();
-    this.ctx.arc(x, y, Math.max(1, radius * 0.35), 0, Math.PI * 2);
+    this.ctx.arc(x, y, radius*.9, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
   }
@@ -97,17 +99,20 @@ export class TextureCanvas {
     this.ctx.save();
     this.ctx.fillStyle = color;
 
-    const dots = Math.max(20, radius * 3);
+    const dots = Math.max(30, Math.floor(radius * 4));
 
     for (let i = 0; i < dots; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * radius;
+
+      // Keeps dots mostly within the same visual footprint as other brushes
+      const distance = Math.sqrt(Math.random()) * radius * 0.9;
+
       const px = x + Math.cos(angle) * distance;
       const py = y + Math.sin(angle) * distance;
 
-      this.ctx.globalAlpha = opacity * (0.2 + Math.random() * 0.5);
+      this.ctx.globalAlpha = opacity * (0.15 + Math.random() * 0.35);
       this.ctx.beginPath();
-      this.ctx.arc(px, py, Math.max(1, radius * 0.08), 0, Math.PI * 2);
+      this.ctx.arc(px, py, Math.max(1, radius * 0.05), 0, Math.PI * 2);
       this.ctx.fill();
     }
 
@@ -162,6 +167,7 @@ export class TextureCanvas {
 
   private hexToRgba(hex: string, alpha: number): string {
     const cleanHex = hex.replace("#", "");
+
     const r = parseInt(cleanHex.substring(0, 2), 16);
     const g = parseInt(cleanHex.substring(2, 4), 16);
     const b = parseInt(cleanHex.substring(4, 6), 16);
