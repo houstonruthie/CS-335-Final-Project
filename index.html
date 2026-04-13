@@ -8,6 +8,19 @@
   </head>
   <body>
     <div id="ui-panel">
+      <label for="toolMode">Tool</label>
+      <select id="toolMode">
+        <option value="paint">Paint</option>
+        <option value="finger">Finger</option>
+      </select>
+
+      <label for="brushType">Brush Style</label>
+      <select id="brushType">
+        <option value="soft">Soft Brush</option>
+        <option value="hardbrush">Hard Brush</option>
+        <option value="spray">Spray Paint</option>
+      </select>
+
       <label for="colorPicker">Brush Color</label>
       <input type="color" id="colorPicker" value="#00aaff" />
 
@@ -21,10 +34,10 @@
 
       <div id="texture-buttons">
         <button id="applyBrickBtn" class="texture-button" title="Brick Texture">
-          <img src="./src/assets/brick.jpg" alt="Brick texture">
+          <img src="./src/assets/brick.jpg" alt="Brick texture" />
         </button>
         <button id="applyFabricBtn" class="texture-button" title="Fabric Stripes Texture">
-          <img src="./src/assets/fabric-stripes.jpg" alt="Fabric stripes texture">
+          <img src="./src/assets/fabric-stripes.jpg" alt="Fabric stripes texture" />
         </button>
       </div>
     </div>
