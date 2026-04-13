@@ -29,7 +29,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 180px;
+  min-width: 200px;
 }
 
 #ui-panel label {
@@ -51,7 +51,18 @@ body {
   width: 100%;
 }
 
-#brushSizeValue {
+#ui-panel select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  font-size: 14px;
+  background: white;
+  color: #111;
+}
+
+#brushSizeValue,
+#brushOpacityValue {
   font-size: 14px;
   color: #111;
 }

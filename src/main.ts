@@ -3,6 +3,9 @@ import * as THREE from "three";
 import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 
+type ToolMode = "paint" | "finger";
+type BrushType = "soft" | "hardbrush" | "spray";
+
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (!canvas) {
   throw new Error("No canvas found");
@@ -13,8 +16,18 @@ const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement
 const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
 const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
 const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
+const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
+const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
 
-if (!colorPicker || !brushSizeSlider || !brushSizeValue) {
+if (
+  !colorPicker ||
+  !brushSizeSlider ||
+  !brushSizeValue ||
+  !brushOpacitySlider ||
+  !brushOpacityValue ||
+  !toolModeSelect ||
+  !brushTypeSelect
+) {
   throw new Error("Missing UI controls.");
 }
 
@@ -26,8 +39,7 @@ const {
   controls,
   painters,
   textureCanvases,
-  materials,
-  brickMap
+  materials
 } = setupScene(canvas);
 
 const sceneRaycaster = new SceneRaycaster();
@@ -40,7 +52,9 @@ let currentFaceIndex = 0;
 // Brush settings
 let brushSize = Number(brushSizeSlider.value);
 let brushColor = colorPicker.value;
-let brushOpacity = 1.0;
+let brushOpacity = Number(brushOpacitySlider.value) / 100.0;
+let currentTool: ToolMode = toolModeSelect.value as ToolMode;
+let currentBrushType: BrushType = brushTypeSelect.value as BrushType;
 
 // Rotation state
 let rotateLeft = false;
@@ -49,10 +63,11 @@ let rotateUp = false;
 let rotateDown = false;
 
 // Initial paint on each face
-painters.forEach((painter, index) => {
-  painter.paint(0.5, 0.5, "#ff0000", 60, 1);
+painters.forEach((painter) => {
+  painter.paint(0.5, 0.5, "#ff0000", 60, 1, "soft");
 });
-materials.forEach(material => {
+
+materials.forEach((material) => {
   if (material.map) {
     material.map.needsUpdate = true;
   }
@@ -69,53 +84,63 @@ brushSizeSlider.addEventListener("input", () => {
 });
 
 brushOpacitySlider.addEventListener("input", () => {
-    brushOpacity = Number(brushOpacitySlider.value) / 100.0;
-    brushOpacityValue.textContent = brushOpacitySlider.value;
+  brushOpacity = Number(brushOpacitySlider.value) / 100.0;
+  brushOpacityValue.textContent = brushOpacitySlider.value;
+});
+
+toolModeSelect.addEventListener("change", () => {
+  currentTool = toolModeSelect.value as ToolMode;
+});
+
+brushTypeSelect.addEventListener("change", () => {
+  currentBrushType = brushTypeSelect.value as BrushType;
 });
 
 // Apply brick texture button
-const applyBrickBtn = document.getElementById("applyBrickBtn") as HTMLButtonElement;
-applyBrickBtn.addEventListener("click", () => {
-  // Load brick image
-  const brickImg = new Image();
-  brickImg.src = new URL("./assets/brick.jpg", import.meta.url).href;
-  brickImg.onload = () => {
-    // Draw brick onto each face's canvas
-    textureCanvases.forEach((textureCanvas, index) => {
-      const ctx = textureCanvas.getCanvas().getContext("2d")!;
-      ctx.drawImage(brickImg, 0, 0, 512, 512);
-    });
+const applyBrickBtn = document.getElementById("applyBrickBtn") as HTMLButtonElement | null;
+if (applyBrickBtn) {
+  applyBrickBtn.addEventListener("click", () => {
+    const brickImg = new Image();
+    brickImg.src = new URL("./assets/brick.jpg", import.meta.url).href;
 
-    // Update all materials to reflect the change
-    materials.forEach(material => {
-      if (material.map) {
-        material.map.needsUpdate = true;
-      }
-    });
-  };
-});
+    brickImg.onload = () => {
+      textureCanvases.forEach((textureCanvas) => {
+        const ctx = textureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(brickImg, 0, 0, 512, 512);
+      });
 
-// Apply fabric stripes texture button
-const applyFabricBtn = document.getElementById("applyFabricBtn") as HTMLButtonElement;
-applyFabricBtn.addEventListener("click", () => {
-  // Load fabric stripes image
-  const fabricImg = new Image();
-  fabricImg.src = new URL("./assets/fabric-stripes.jpg", import.meta.url).href;
-  fabricImg.onload = () => {
-    // Draw fabric stripes onto each face's canvas
-    textureCanvases.forEach((textureCanvas, index) => {
-      const ctx = textureCanvas.getCanvas().getContext("2d")!;
-      ctx.drawImage(fabricImg, 0, 0, 512, 512);
-    });
+      materials.forEach((material) => {
+        if (material.map) {
+          material.map.needsUpdate = true;
+        }
+      });
+    };
+  });
+}
 
-    // Update all materials to reflect the change
-    materials.forEach(material => {
-      if (material.map) {
-        material.map.needsUpdate = true;
-      }
-    });
-  };
-});
+// Apply fabric texture button
+const applyFabricBtn = document.getElementById("applyFabricBtn") as HTMLButtonElement | null;
+if (applyFabricBtn) {
+  applyFabricBtn.addEventListener("click", () => {
+    const fabricImg = new Image();
+    fabricImg.src = new URL("./assets/fabric-stripes.jpg", import.meta.url).href;
+
+    fabricImg.onload = () => {
+      textureCanvases.forEach((textureCanvas) => {
+        const ctx = textureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(fabricImg, 0, 0, 512, 512);
+      });
+
+      materials.forEach((material) => {
+        if (material.map) {
+          material.map.needsUpdate = true;
+        }
+      });
+    };
+  });
+}
 
 // Mouse events
 canvas.addEventListener("mousedown", (event: MouseEvent) => {
@@ -128,12 +153,22 @@ canvas.addEventListener("mousedown", (event: MouseEvent) => {
   }
 
   currentFaceIndex = intersection.faceIndex;
-  painters[currentFaceIndex].paint(intersection.uv.x, intersection.uv.y, brushColor, brushSize, brushOpacity);
-  
-  if (materials[currentFaceIndex].map) {
-    materials[currentFaceIndex].map!.needsUpdate = true;
+
+  if (currentTool === "paint") {
+    painters[currentFaceIndex].paint(
+      intersection.uv.x,
+      intersection.uv.y,
+      brushColor,
+      brushSize,
+      brushOpacity,
+      currentBrushType
+    );
+
+    if (materials[currentFaceIndex].map) {
+      materials[currentFaceIndex].map!.needsUpdate = true;
+    }
   }
-  
+
   lastPaintUV = intersection.uv;
 });
 
@@ -147,21 +182,49 @@ canvas.addEventListener("mousemove", (event: MouseEvent) => {
     return;
   }
 
-  // Only continue painting on the same face
   if (intersection.faceIndex !== currentFaceIndex) {
     return;
   }
 
   if (lastPaintUV) {
-    painters[currentFaceIndex].paintStroke(lastPaintUV, intersection.uv, brushColor, brushSize, brushOpacity);
+    if (currentTool === "paint") {
+      painters[currentFaceIndex].paintStroke(
+        lastPaintUV,
+        intersection.uv,
+        brushColor,
+        brushSize,
+        brushOpacity,
+        currentBrushType
+      );
+    } else if (currentTool === "finger") {
+      painters[currentFaceIndex].smudgeStroke(
+        lastPaintUV,
+        intersection.uv,
+        brushSize,
+        0.5
+      );
+    }
+
+    if (materials[currentFaceIndex].map) {
+      materials[currentFaceIndex].map!.needsUpdate = true;
+    }
   } else {
-    painters[currentFaceIndex].paint(intersection.uv.x, intersection.uv.y, brushColor, brushSize, brushOpacity);
+    if (currentTool === "paint") {
+      painters[currentFaceIndex].paint(
+        intersection.uv.x,
+        intersection.uv.y,
+        brushColor,
+        brushSize,
+        brushOpacity,
+        currentBrushType
+      );
+
+      if (materials[currentFaceIndex].map) {
+        materials[currentFaceIndex].map!.needsUpdate = true;
+      }
+    }
   }
 
-  if (materials[currentFaceIndex].map) {
-    materials[currentFaceIndex].map!.needsUpdate = true;
-  }
-  
   lastPaintUV = intersection.uv;
 });
 
@@ -227,4 +290,3 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 });
-
