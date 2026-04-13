@@ -29,7 +29,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 100px;
+  min-width: 200px;
   Max-width: 340px;
 }
 
