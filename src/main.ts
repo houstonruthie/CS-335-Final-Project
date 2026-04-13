@@ -263,6 +263,177 @@ if (applyFabricBtn) {
   });
 }
 
+// Apply water texture button
+const applyWaterBtn = document.getElementById("applyWaterBtn") as HTMLButtonElement | null;
+if (applyWaterBtn) {
+  applyWaterBtn.addEventListener("click", () => {
+    const waterImg = new Image();
+    waterImg.src = new URL("./assets/water.jpg", import.meta.url).href;
+
+    waterImg.onload = () => {
+      if (currentObjectType === "cube") {
+        cubeTextureCanvases.forEach((textureCanvas) => {
+          const ctx = textureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(waterImg, 0, 0, 512, 512);
+        });
+
+        cubeMaterials.forEach((material) => {
+          if (material.map) {
+            material.map.needsUpdate = true;
+          }
+        });
+      } else {
+        const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(
+          waterImg,
+          0,
+          0,
+          sphereTextureCanvas.getWidth(),
+          sphereTextureCanvas.getHeight()
+        );
+
+        if (sphereMaterial.map) {
+          sphereMaterial.map.needsUpdate = true;
+        }
+      }
+    };
+  });
+}
+
+// Apply rock path texture button
+const applyRockPathBtn = document.getElementById("applyRockPathBtn") as HTMLButtonElement | null;
+if (applyRockPathBtn) {
+  applyRockPathBtn.addEventListener("click", () => {
+    const rockPathImg = new Image();
+    rockPathImg.src = new URL("./assets/rock-path.jpg", import.meta.url).href;
+
+    rockPathImg.onload = () => {
+      if (currentObjectType === "cube") {
+        cubeTextureCanvases.forEach((textureCanvas) => {
+          const ctx = textureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(rockPathImg, 0, 0, 512, 512);
+        });
+
+        cubeMaterials.forEach((material) => {
+          if (material.map) {
+            material.map.needsUpdate = true;
+          }
+        });
+      } else {
+        const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(
+          rockPathImg,
+          0,
+          0,
+          sphereTextureCanvas.getWidth(),
+          sphereTextureCanvas.getHeight()
+        );
+
+        if (sphereMaterial.map) {
+          sphereMaterial.map.needsUpdate = true;
+        }
+      }
+    };
+  });
+}
+
+// Apply abstract stripes texture button
+const applyAbstractBtn = document.getElementById("applyAbstractBtn") as HTMLButtonElement | null;
+if (applyAbstractBtn) {
+  applyAbstractBtn.addEventListener("click", () => {
+    const abstractImg = new Image();
+    abstractImg.src = new URL("./assets/abstract-stripes.jpg", import.meta.url).href;
+
+    abstractImg.onload = () => {
+      if (currentObjectType === "cube") {
+        cubeTextureCanvases.forEach((textureCanvas) => {
+          const ctx = textureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(abstractImg, 0, 0, 512, 512);
+        });
+
+        cubeMaterials.forEach((material) => {
+          if (material.map) {
+            material.map.needsUpdate = true;
+          }
+        });
+      } else {
+        const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(
+          abstractImg,
+          0,
+          0,
+          sphereTextureCanvas.getWidth(),
+          sphereTextureCanvas.getHeight()
+        );
+
+        if (sphereMaterial.map) {
+          sphereMaterial.map.needsUpdate = true;
+        }
+      }
+    };
+  });
+}
+
+// Handle custom texture upload
+const textureUpload = document.getElementById("textureUpload") as HTMLInputElement;
+if (textureUpload) {
+  textureUpload.addEventListener("change", (event: Event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    // Use FileReader to read the file
+    const reader = new FileReader();
+    
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const dataUrl = e.target?.result as string;
+      
+      // Create image from the data URL
+      const customImg = new Image();
+      customImg.src = dataUrl;
+      
+      customImg.onload = () => {
+        // Apply to current object
+        if (currentObjectType === "cube") {
+          cubeTextureCanvases.forEach((textureCanvas) => {
+            const ctx = textureCanvas.getCanvas().getContext("2d");
+            if (!ctx) return;
+            ctx.drawImage(customImg, 0, 0, 512, 512);
+          });
+
+          cubeMaterials.forEach((material) => {
+            if (material.map) {
+              material.map.needsUpdate = true;
+            }
+          });
+        } else {
+          const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(
+            customImg,
+            0,
+            0,
+            sphereTextureCanvas.getWidth(),
+            sphereTextureCanvas.getHeight()
+          );
+
+          if (sphereMaterial.map) {
+            sphereMaterial.map.needsUpdate = true;
+          }
+        }
+      };
+    };
+    
+    // Read the file as a Data URL
+    reader.readAsDataURL(file);
+  });
+}
+
 // Mouse events
 canvas.addEventListener("mousedown", (event: MouseEvent) => {
   isPainting = true;
