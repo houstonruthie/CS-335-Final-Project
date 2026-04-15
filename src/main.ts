@@ -4,6 +4,7 @@ import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 import { setupMousePainting } from "./interaction/mouse";
 import { getUIElements, createUIState, bindUIState } from "./ui/controls";
+import { bindTextureButtons, bindTextureUpload } from "./ui/textures";
 import { ROTATION_SPEED } from "./utils/constants";
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -113,6 +114,22 @@ function updateBrushPreview(event: MouseEvent): void {
 bindUIState(ui, uiState, updateVisibleObject);
 updateVisibleObject();
 
+bindTextureButtons({
+  getCurrentObjectType: () => uiState.objectType,
+  cubeTextureCanvases,
+  sphereTextureCanvas,
+  cubeMaterials,
+  sphereMaterial
+});
+
+bindTextureUpload({
+  getCurrentObjectType: () => uiState.objectType,
+  cubeTextureCanvases,
+  sphereTextureCanvas,
+  cubeMaterials,
+  sphereMaterial
+});
+
 setupMousePainting({
   canvas,
   camera,
@@ -133,17 +150,27 @@ setupMousePainting({
 });
 
 window.addEventListener("keydown", (event: KeyboardEvent) => {
-  if (event.key === "ArrowLeft") rotateLeft = true;
-  else if (event.key === "ArrowRight") rotateRight = true;
-  else if (event.key === "ArrowUp") rotateUp = true;
-  else if (event.key === "ArrowDown") rotateDown = true;
+  if (event.key === "ArrowLeft") {
+    rotateLeft = true;
+  } else if (event.key === "ArrowRight") {
+    rotateRight = true;
+  } else if (event.key === "ArrowUp") {
+    rotateUp = true;
+  } else if (event.key === "ArrowDown") {
+    rotateDown = true;
+  }
 });
 
 window.addEventListener("keyup", (event: KeyboardEvent) => {
-  if (event.key === "ArrowLeft") rotateLeft = false;
-  else if (event.key === "ArrowRight") rotateRight = false;
-  else if (event.key === "ArrowUp") rotateUp = false;
-  else if (event.key === "ArrowDown") rotateDown = false;
+  if (event.key === "ArrowLeft") {
+    rotateLeft = false;
+  } else if (event.key === "ArrowRight") {
+    rotateRight = false;
+  } else if (event.key === "ArrowUp") {
+    rotateUp = false;
+  } else if (event.key === "ArrowDown") {
+    rotateDown = false;
+  }
 });
 
 function animate(): void {
@@ -151,10 +178,18 @@ function animate(): void {
 
   const activeObject = getActiveObject();
 
-  if (rotateLeft) activeObject.rotation.y -= ROTATION_SPEED;
-  if (rotateRight) activeObject.rotation.y += ROTATION_SPEED;
-  if (rotateUp) activeObject.rotation.x -= ROTATION_SPEED;
-  if (rotateDown) activeObject.rotation.x += ROTATION_SPEED;
+  if (rotateLeft) {
+    activeObject.rotation.y -= ROTATION_SPEED;
+  }
+  if (rotateRight) {
+    activeObject.rotation.y += ROTATION_SPEED;
+  }
+  if (rotateUp) {
+    activeObject.rotation.x -= ROTATION_SPEED;
+  }
+  if (rotateDown) {
+    activeObject.rotation.x += ROTATION_SPEED;
+  }
 
   controls.update();
   renderer.render(scene, camera);
