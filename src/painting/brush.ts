@@ -1,0 +1,1 @@
+export type BrushType = "soft" | "hardbrush" | "spray";

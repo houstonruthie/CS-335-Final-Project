@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { TextureCanvas } from "./textureCanvas";
-
-export type BrushType = "soft" | "hardbrush" | "spray";
+import type { BrushType } from "./brush";
+import { getStrokeSteps, lerpUV } from "../interaction/uv";
 
 export class Painter {
   private textureCanvas: TextureCanvas;
@@ -29,18 +29,17 @@ export class Painter {
     opacity: number = 1,
     brushType: BrushType = "soft"
   ): void {
-    const dx = endUV.x - startUV.x;
-    const dy = endUV.y - startUV.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const uvStep = Math.max(0.001, radius / 1024 / 2);
-    const steps = Math.max(1, Math.ceil(distance / uvStep));
+    const steps = getStrokeSteps(
+      startUV,
+      endUV,
+      radius,
+      this.textureCanvas.getWidth()
+    );
 
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const u = startUV.x + dx * t;
-      const v = startUV.y + dy * t;
-      this.paint(u, v, color, radius, opacity, brushType);
+      const uv = lerpUV(startUV, endUV, t);
+      this.paint(uv.x, uv.y, color, radius, opacity, brushType);
     }
   }
 
@@ -52,16 +51,17 @@ export class Painter {
   ): void {
     const dx = endUV.x - startUV.x;
     const dy = endUV.y - startUV.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const uvStep = Math.max(0.001, radius / 1024 / 2);
-    const steps = Math.max(1, Math.ceil(distance / uvStep));
+    const steps = getStrokeSteps(
+      startUV,
+      endUV,
+      radius,
+      this.textureCanvas.getWidth()
+    );
 
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const u = startUV.x + dx * t;
-      const v = startUV.y + dy * t;
-      this.textureCanvas.smudgeAtUV(u, v, dx, dy, radius, strength);
+      const uv = lerpUV(startUV, endUV, t);
+      this.textureCanvas.smudgeAtUV(uv.x, uv.y, dx, dy, radius, strength);
     }
   }
 
