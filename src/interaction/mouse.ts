@@ -4,21 +4,25 @@ import { ShapeManager } from "../scene/shapeManager";
 import type { UIState } from "../ui/controls";
 
 type MouseControllerDeps = {
-  canvas: HTMLCanvasElement;
-  camera: THREE.Camera;
-  raycaster: SceneRaycaster;
-  shapeManager: ShapeManager;
-  uiState: UIState;
-  updateBrushPreview: (event: MouseEvent) => void;
+    canvas: HTMLCanvasElement;
+    camera: THREE.Camera;
+    raycaster: SceneRaycaster;
+    shapeManager: ShapeManager;
+    uiState: UIState;
+    updateBrushPreview: (event: MouseEvent) => void;
+    undoStack: ImageData[];
+    redoStack: ImageData[];
 };
 
 export function setupMousePainting({
-  canvas,
-  camera,
-  raycaster,
-  shapeManager,
-  uiState,
-  updateBrushPreview
+    canvas,
+    camera,
+    raycaster,
+    shapeManager,
+    uiState,
+    updateBrushPreview,
+    undoStack,
+    redoStack
 }: MouseControllerDeps): void {
   let isPainting = false;
   let isRotating = false;
@@ -52,6 +56,19 @@ export function setupMousePainting({
 
     // Left click to paint
     if (event.button === 0) {
+      if (activeShape) {
+          const tc = activeShape.textureCanvases[0];
+          const ctx = tc.getCanvas().getContext("2d");
+
+          if (ctx) {
+              undoStack.push(
+                  ctx.getImageData(0, 0, tc.getWidth(), tc.getHeight())
+              );
+
+              // New action = wipe redo history
+              redoStack.length = 0;
+          }
+      }
       isPainting = true;
 
       const intersection = raycaster.getIntersectionUV(

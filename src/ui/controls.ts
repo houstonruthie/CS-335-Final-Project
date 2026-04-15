@@ -33,6 +33,8 @@ export function getUIElements(): UIElements {
   const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
   const textureUpload = document.getElementById("textureUpload") as HTMLInputElement | null;
 
+
+
   if (
     !shapeTypeSelect ||
     !toolModeSelect ||
@@ -101,7 +103,35 @@ export function bindUIState(
     state.brushOpacity = Number(elements.brushOpacitySlider.value) / 100;
     elements.brushOpacityValue.textContent = elements.brushOpacitySlider.value;
   });
+  window.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === '[') {
+          state.brushSize = Number(elements.brushSizeSlider.value);
+          if (state.brushSize >= 6) {
+              state.brushSize -= 5;
+          }
+          else {
+              state.brushSize = 1;
+          }
+          elements.brushSizeValue.textContent = String(state.brushSize);
+          elements.brushSizeSlider.value = String(state.brushSize);
+      }
+  });
+  window.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === ']') {
+          state.brushSize = Number(elements.brushSizeSlider.value);
+          if (state.brushSize < 95) {
+              state.brushSize += 5;
+          }
+          else {
+              state.brushSize = 100;
+          }
+          elements.brushSizeValue.textContent = String(state.brushSize);
+          elements.brushSizeSlider.value = String(state.brushSize);
+      }
+  });
 }
+
+
 
 export function bindUiPanelToggle(): void {
   const toggleUiBtn = document.getElementById(
@@ -120,3 +150,4 @@ export function bindUiPanelToggle(): void {
     uiPanel.classList.toggle("hidden");
   });
 }
+

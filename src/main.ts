@@ -1,9 +1,9 @@
-import "./style.css";
 import * as THREE from "three";
-import { setupScene } from "./scene/setupScene";
-import { SceneRaycaster } from "./interaction/raycaster";
 import { setupMousePainting } from "./interaction/mouse";
-import { getUIElements, createUIState, bindUIState, bindUiPanelToggle } from "./ui/controls";
+import { SceneRaycaster } from "./interaction/raycaster";
+import { setupScene } from "./scene/setupScene";
+import "./style.css";
+import { bindUIState, bindUiPanelToggle, createUIState, getUIElements } from "./ui/controls";
 import { bindTextureButtons, bindTextureUpload } from "./ui/textures";
 import { ROTATION_SPEED } from "./utils/constants";
 
@@ -11,7 +11,6 @@ const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (!canvas) {
   throw new Error("No canvas found");
 }
-
 const ui = getUIElements();
 const uiState = createUIState(ui);
 
@@ -20,6 +19,9 @@ bindUiPanelToggle();
 const { scene, camera, renderer, controls, shapeManager } = setupScene(canvas);
 
 const sceneRaycaster = new SceneRaycaster();
+
+let undoStack: ImageData[] = [];
+let redoStack: ImageData[] = [];
 
 let rotateLeft = false;
 let rotateRight = false;
@@ -103,12 +105,14 @@ bindTextureUpload({
 });
 
 setupMousePainting({
-  canvas,
-  camera,
-  raycaster: sceneRaycaster,
-  shapeManager,
-  uiState,
-  updateBrushPreview
+    canvas,
+    camera,
+    raycaster: sceneRaycaster,
+    shapeManager,
+    uiState,
+    updateBrushPreview,
+    undoStack,
+    redoStack
 });
 
 window.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -168,4 +172,77 @@ window.addEventListener("resize", () => {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
+});
+
+const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
+
+clearBtn.addEventListener("click", () => {
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape) return;
+
+    activeShape.textureCanvases.forEach((textureCanvas) => {
+        textureCanvas.clear();
+    });
+
+    activeShape.materials.forEach((material) => {
+        if (material.map) {
+            material.map.needsUpdate = true;
+        }
+    });
+});
+
+const undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
+function undo(): void {
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape || undoStack.length === 0) return;
+
+    const tc = activeShape.textureCanvases[0];
+    const ctx = tc.getCanvas().getContext("2d");
+    if (!ctx) return;
+
+    const current = ctx.getImageData(0, 0, tc.getWidth(), tc.getHeight());
+    redoStack.push(current);
+
+    const prev = undoStack.pop()!;
+    ctx.putImageData(prev, 0, 0);
+
+    activeShape.materials.forEach((m) => {
+        if (m.map) m.map.needsUpdate = true;
+    });
+}
+
+const redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;
+
+function redo(): void {
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape || redoStack.length === 0) return;
+
+    const tc = activeShape.textureCanvases[0];
+    const ctx = tc.getCanvas().getContext("2d");
+    if (!ctx) return;
+
+    const current = ctx.getImageData(0, 0, tc.getWidth(), tc.getHeight());
+    undoStack.push(current);
+
+    const next = redoStack.pop()!;
+    ctx.putImageData(next, 0, 0);
+
+    activeShape.materials.forEach((m) => {
+        if (m.map) m.map.needsUpdate = true;
+    });
+}
+
+undoBtn.addEventListener("click", undo);
+redoBtn.addEventListener("click", redo);
+
+window.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+
+        if (event.shiftKey) {
+            redo();
+        } else {
+            undo();
+        }
+    }
 });
