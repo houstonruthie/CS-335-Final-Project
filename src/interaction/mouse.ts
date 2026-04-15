@@ -1,15 +1,14 @@
 import * as THREE from "three";
 import { SceneRaycaster } from "./raycaster";
-import type { SceneObjects } from "../scene/objects";
+import { ShapeManager } from "../scene/shapeManager";
 import type { UIState } from "../ui/controls";
 
 type MouseControllerDeps = {
   canvas: HTMLCanvasElement;
   camera: THREE.Camera;
   raycaster: SceneRaycaster;
-  sceneObjects: SceneObjects;
+  shapeManager: ShapeManager;
   uiState: UIState;
-  updateTexture: (faceIndex?: number) => void;
   updateBrushPreview: (event: MouseEvent) => void;
 };
 
@@ -17,39 +16,67 @@ export function setupMousePainting({
   canvas,
   camera,
   raycaster,
-  sceneObjects,
+  shapeManager,
   uiState,
-  updateTexture,
   updateBrushPreview
 }: MouseControllerDeps): void {
   let isPainting = false;
-  let lastPaintUV: THREE.Vector2 | null = null;
-  let currentFaceIndex = 0;
+  let isRotating = false;
 
-  function getActiveObject(): THREE.Object3D {
-    return uiState.objectType === "cube" ? sceneObjects.cube : sceneObjects.sphere;
+  let lastPaintUV: THREE.Vector2 | null = null;
+  let currentFaceIndex: number | undefined = undefined;
+
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  function getActiveShape() {
+    return shapeManager.getActiveShape();
   }
 
+  function getActiveMesh(): THREE.Object3D | null {
+    const activeShape = getActiveShape();
+    return activeShape ? activeShape.mesh : null;
+  }
+
+  canvas.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+
   canvas.addEventListener("mousedown", (event: MouseEvent) => {
-    isPainting = true;
+    const activeShape = getActiveShape();
+    const activeMesh = getActiveMesh();
 
-    const intersection = raycaster.getIntersectionUV(
-      event,
-      canvas,
-      camera,
-      getActiveObject()
-    );
-
-    if (!intersection) {
-      lastPaintUV = null;
+    if (!activeShape || !activeMesh) {
       return;
     }
 
-    if (uiState.objectType === "cube") {
+    // Left click to paint
+    if (event.button === 0) {
+      isPainting = true;
+
+      const intersection = raycaster.getIntersectionUV(
+        event,
+        canvas,
+        camera,
+        activeMesh
+      );
+
+      if (!intersection) {
+        lastPaintUV = null;
+        currentFaceIndex = undefined;
+        return;
+      }
+
       currentFaceIndex = intersection.faceIndex;
 
+      const painter = activeShape.getPainter(intersection.faceIndex);
+      if (!painter) {
+        lastPaintUV = null;
+        return;
+      }
+
       if (uiState.toolMode === "paint") {
-        sceneObjects.cubePainters[currentFaceIndex].paint(
+        painter.paint(
           intersection.uv.x,
           intersection.uv.y,
           uiState.brushColor,
@@ -57,27 +84,44 @@ export function setupMousePainting({
           uiState.brushOpacity,
           uiState.brushType
         );
-        updateTexture(currentFaceIndex);
+
+        activeShape.updateTexture(intersection.faceIndex);
       }
-    } else {
-      if (uiState.toolMode === "paint") {
-        sceneObjects.spherePainter.paint(
-          intersection.uv.x,
-          intersection.uv.y,
-          uiState.brushColor,
-          uiState.brushSize,
-          uiState.brushOpacity,
-          uiState.brushType
-        );
-        updateTexture();
-      }
+
+      lastPaintUV = intersection.uv;
     }
 
-    lastPaintUV = intersection.uv;
+    // Right click to rotate
+    else if (event.button === 2) {
+      isRotating = true;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+    }
   });
 
   canvas.addEventListener("mousemove", (event: MouseEvent) => {
+    const activeShape = getActiveShape();
+    const activeMesh = getActiveMesh();
+
+    if (!activeShape || !activeMesh) {
+      return;
+    }
+
     updateBrushPreview(event);
+
+    // Right click drag rotation
+    if (isRotating) {
+      const deltaX = event.clientX - lastMouseX;
+      const deltaY = event.clientY - lastMouseY;
+
+      activeShape.mesh.rotation.y += deltaX * 0.007;
+      activeShape.mesh.rotation.x += deltaY * 0.007;
+
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+
+      return;
+    }
 
     if (!isPainting) {
       return;
@@ -87,92 +131,78 @@ export function setupMousePainting({
       event,
       canvas,
       camera,
-      getActiveObject()
+      activeMesh
     );
 
     if (!intersection) {
       return;
     }
 
-    if (uiState.objectType === "cube") {
-      if (intersection.faceIndex !== currentFaceIndex) {
-        return;
-      }
+    const painter = activeShape.getPainter(intersection.faceIndex);
+    if (!painter) {
+      return;
+    }
 
-      if (lastPaintUV) {
-        if (uiState.toolMode === "paint") {
-          sceneObjects.cubePainters[currentFaceIndex].paintStroke(
-            lastPaintUV,
-            intersection.uv,
-            uiState.brushColor,
-            uiState.brushSize,
-            uiState.brushOpacity,
-            uiState.brushType
-          );
-        } else {
-          sceneObjects.cubePainters[currentFaceIndex].smudgeStroke(
-            lastPaintUV,
-            intersection.uv,
-            uiState.brushSize,
-            0.5
-          );
-        }
+    if (
+      activeShape.painters.length > 1 &&
+      currentFaceIndex !== undefined &&
+      intersection.faceIndex !== currentFaceIndex
+    ) {
+      return;
+    }
 
-        updateTexture(currentFaceIndex);
-      } else if (uiState.toolMode === "paint") {
-        sceneObjects.cubePainters[currentFaceIndex].paint(
-          intersection.uv.x,
-          intersection.uv.y,
+    if (lastPaintUV) {
+      if (uiState.toolMode === "paint") {
+        painter.paintStroke(
+          lastPaintUV,
+          intersection.uv,
           uiState.brushColor,
           uiState.brushSize,
           uiState.brushOpacity,
           uiState.brushType
         );
-        updateTexture(currentFaceIndex);
-      }
-    } else {
-      if (lastPaintUV) {
-        if (uiState.toolMode === "paint") {
-          sceneObjects.spherePainter.paintStroke(
-            lastPaintUV,
-            intersection.uv,
-            uiState.brushColor,
-            uiState.brushSize,
-            uiState.brushOpacity,
-            uiState.brushType
-          );
-        } else {
-          sceneObjects.spherePainter.smudgeStroke(
-            lastPaintUV,
-            intersection.uv,
-            uiState.brushSize,
-            0.5
-          );
-        }
-
-        updateTexture();
-      } else if (uiState.toolMode === "paint") {
-        sceneObjects.spherePainter.paint(
-          intersection.uv.x,
-          intersection.uv.y,
-          uiState.brushColor,
+      } else if (uiState.toolMode === "finger") {
+        painter.smudgeStroke(
+          lastPaintUV,
+          intersection.uv,
           uiState.brushSize,
-          uiState.brushOpacity,
-          uiState.brushType
+          0.5
         );
-        updateTexture();
       }
+
+      activeShape.updateTexture(intersection.faceIndex);
+    } else if (uiState.toolMode === "paint") {
+      painter.paint(
+        intersection.uv.x,
+        intersection.uv.y,
+        uiState.brushColor,
+        uiState.brushSize,
+        uiState.brushOpacity,
+        uiState.brushType
+      );
+
+      activeShape.updateTexture(intersection.faceIndex);
     }
 
     lastPaintUV = intersection.uv;
   });
 
-  canvas.addEventListener("mouseleave", () => {
-    updateBrushPreview(new MouseEvent("mousemove", { clientX: -9999, clientY: -9999 }));
+  window.addEventListener("mouseup", (event: MouseEvent) => {
+    if (event.button === 0) {
+      isPainting = false;
+      lastPaintUV = null;
+      currentFaceIndex = undefined;
+    }
+
+    if (event.button === 2) {
+      isRotating = false;
+    }
   });
 
-  window.addEventListener("mouseup", () => {
+  canvas.addEventListener("mouseleave", () => {
     isPainting = false;
+    isRotating = false;
     lastPaintUV = null;
+    currentFaceIndex = undefined;
   });
 }

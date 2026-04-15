@@ -1,18 +1,12 @@
-import * as THREE from "three";
-import type { ObjectType } from "../utils/constants";
-import { TextureCanvas } from "../painting/textureCanvas";
-
-type TextureBindings = {
-  getCurrentObjectType: () => ObjectType;
-  cubeTextureCanvases: TextureCanvas[];
-  sphereTextureCanvas: TextureCanvas;
-  cubeMaterials: THREE.MeshPhongMaterial[];
-  sphereMaterial: THREE.MeshPhongMaterial;
-};
+import { ShapeManager } from "../scene/shapeManager";
 
 type TextureButtonConfig = {
   buttonId: string;
   assetUrl: string;
+};
+
+type TextureBindings = {
+  shapeManager: ShapeManager;
 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -36,61 +30,38 @@ function drawImageToCanvas(
   ctx.drawImage(img, 0, 0, width, height);
 }
 
-function applyImageToCurrentObject(
+function applyImageToActiveShape(
   img: HTMLImageElement,
-  currentObjectType: ObjectType,
-  cubeTextureCanvases: TextureCanvas[],
-  sphereTextureCanvas: TextureCanvas,
-  cubeMaterials: THREE.MeshPhongMaterial[],
-  sphereMaterial: THREE.MeshPhongMaterial
+  shapeManager: ShapeManager
 ): void {
-  if (currentObjectType === "cube") {
-    cubeTextureCanvases.forEach((textureCanvas) => {
-      const ctx = textureCanvas.getCanvas().getContext("2d");
-      if (!ctx) {
-        return;
-      }
-
-      drawImageToCanvas(
-        ctx,
-        img,
-        textureCanvas.getWidth(),
-        textureCanvas.getHeight()
-      );
-    });
-
-    cubeMaterials.forEach((material) => {
-      if (material.map) {
-        material.map.needsUpdate = true;
-      }
-    });
-
+  const activeShape = shapeManager.getActiveShape();
+  if (!activeShape) {
     return;
   }
 
-  const ctx = sphereTextureCanvas.getCanvas().getContext("2d");
-  if (!ctx) {
-    return;
-  }
+  activeShape.textureCanvases.forEach((textureCanvas) => {
+    const ctx = textureCanvas.getCanvas().getContext("2d");
+    if (!ctx) {
+      return;
+    }
 
-  drawImageToCanvas(
-    ctx,
-    img,
-    sphereTextureCanvas.getWidth(),
-    sphereTextureCanvas.getHeight()
-  );
+    drawImageToCanvas(
+      ctx,
+      img,
+      textureCanvas.getWidth(),
+      textureCanvas.getHeight()
+    );
+  });
 
-  if (sphereMaterial.map) {
-    sphereMaterial.map.needsUpdate = true;
-  }
+  activeShape.materials.forEach((material) => {
+    if (material.map) {
+      material.map.needsUpdate = true;
+    }
+  });
 }
 
 export function bindTextureButtons({
-  getCurrentObjectType,
-  cubeTextureCanvases,
-  sphereTextureCanvas,
-  cubeMaterials,
-  sphereMaterial
+  shapeManager
 }: TextureBindings): void {
   const buttons: TextureButtonConfig[] = [
     {
@@ -124,15 +95,7 @@ export function bindTextureButtons({
     button.addEventListener("click", async () => {
       try {
         const img = await loadImage(assetUrl);
-
-        applyImageToCurrentObject(
-          img,
-          getCurrentObjectType(),
-          cubeTextureCanvases,
-          sphereTextureCanvas,
-          cubeMaterials,
-          sphereMaterial
-        );
+        applyImageToActiveShape(img, shapeManager);
       } catch (error) {
         console.error(error);
       }
@@ -141,11 +104,7 @@ export function bindTextureButtons({
 }
 
 export function bindTextureUpload({
-  getCurrentObjectType,
-  cubeTextureCanvases,
-  sphereTextureCanvas,
-  cubeMaterials,
-  sphereMaterial
+  shapeManager
 }: TextureBindings): void {
   const textureUpload = document.getElementById(
     "textureUpload"
@@ -172,14 +131,7 @@ export function bindTextureUpload({
       const img = new Image();
 
       img.onload = () => {
-        applyImageToCurrentObject(
-          img,
-          getCurrentObjectType(),
-          cubeTextureCanvases,
-          sphereTextureCanvas,
-          cubeMaterials,
-          sphereMaterial
-        );
+        applyImageToActiveShape(img, shapeManager);
       };
 
       img.onerror = () => {
@@ -194,7 +146,6 @@ export function bindTextureUpload({
     };
 
     reader.readAsDataURL(file);
-
     textureUpload.value = "";
   });
 }

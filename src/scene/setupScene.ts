@@ -2,7 +2,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { createCamera } from "./camera";
 import { addLights } from "./lights";
-import { createPaintableObjects } from "./objects";
+import { ShapeManager } from "./shapeManager";
+
+// Shapes
+import { createCube } from "./shapes/createCube";
+import { createSphere } from "./shapes/createSphere";
+import { createCylinder } from "./shapes/createCylinder";
+import { createCone } from "./shapes/createCone";
+import { createTorus } from "./shapes/createTorus";
 
 export function setupScene(canvas: HTMLCanvasElement) {
   const scene = new THREE.Scene();
@@ -24,13 +31,19 @@ export function setupScene(canvas: HTMLCanvasElement) {
   controls.enablePan = false;
   controls.enableZoom = true;
 
-  const objects = createPaintableObjects(scene);
+  const shapeManager = new ShapeManager(scene, [
+    createCube(),
+    createSphere(),
+    createCylinder(),
+    createCone(),
+    createTorus()
+  ]);
 
   return {
     scene,
     camera,
     renderer,
     controls,
-    ...objects
+    shapeManager
   };
 }

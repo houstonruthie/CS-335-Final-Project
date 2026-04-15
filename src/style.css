@@ -17,9 +17,24 @@ body {
   height: 100vh;
 }
 
-#ui-panel {
+#toggleUiBtn {
   position: absolute;
   top: 20px;
+  left: 20px;
+  z-index: 20;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+#ui-panel {
+  position: absolute;
+  top: 70px;
   left: 20px;
   z-index: 10;
   background: rgba(255, 255, 255, 0.92);
@@ -60,6 +75,10 @@ body {
   font-size: 14px;
   background: white;
   color: #111;
+}
+
+#ui-panel.hidden {
+  display: none;
 }
 
 #brushSizeValue,

@@ -1,8 +1,8 @@
 import type { BrushType } from "../painting/brush";
-import type { ObjectType, ToolMode } from "../utils/constants";
+import type { ShapeType, ToolMode } from "../utils/constants";
 
 export type UIElements = {
-  objectTypeSelect: HTMLSelectElement;
+  shapeTypeSelect: HTMLSelectElement;
   toolModeSelect: HTMLSelectElement;
   brushTypeSelect: HTMLSelectElement;
   colorPicker: HTMLInputElement;
@@ -14,7 +14,7 @@ export type UIElements = {
 };
 
 export type UIState = {
-  objectType: ObjectType;
+  shapeType: ShapeType;
   toolMode: ToolMode;
   brushType: BrushType;
   brushColor: string;
@@ -23,7 +23,7 @@ export type UIState = {
 };
 
 export function getUIElements(): UIElements {
-  const objectTypeSelect = document.getElementById("objectType") as HTMLSelectElement;
+  const shapeTypeSelect = document.getElementById("shapeType") as HTMLSelectElement;
   const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
   const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
   const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
@@ -34,7 +34,7 @@ export function getUIElements(): UIElements {
   const textureUpload = document.getElementById("textureUpload") as HTMLInputElement | null;
 
   if (
-    !objectTypeSelect ||
+    !shapeTypeSelect ||
     !toolModeSelect ||
     !brushTypeSelect ||
     !colorPicker ||
@@ -47,7 +47,7 @@ export function getUIElements(): UIElements {
   }
 
   return {
-    objectTypeSelect,
+    shapeTypeSelect,
     toolModeSelect,
     brushTypeSelect,
     colorPicker,
@@ -61,7 +61,7 @@ export function getUIElements(): UIElements {
 
 export function createUIState(elements: UIElements): UIState {
   return {
-    objectType: elements.objectTypeSelect.value as ObjectType,
+    shapeType: elements.shapeTypeSelect.value as ShapeType,
     toolMode: elements.toolModeSelect.value as ToolMode,
     brushType: elements.brushTypeSelect.value as BrushType,
     brushColor: elements.colorPicker.value,
@@ -75,8 +75,8 @@ export function bindUIState(
   state: UIState,
   onObjectChange: () => void
 ): void {
-  elements.objectTypeSelect.addEventListener("change", () => {
-    state.objectType = elements.objectTypeSelect.value as ObjectType;
+  elements.shapeTypeSelect.addEventListener("change", () => {
+    state.shapeType = elements.shapeTypeSelect.value as ShapeType;
     onObjectChange();
   });
 
@@ -100,5 +100,23 @@ export function bindUIState(
   elements.brushOpacitySlider.addEventListener("input", () => {
     state.brushOpacity = Number(elements.brushOpacitySlider.value) / 100;
     elements.brushOpacityValue.textContent = elements.brushOpacitySlider.value;
+  });
+}
+
+export function bindUiPanelToggle(): void {
+  const toggleUiBtn = document.getElementById(
+    "toggleUiBtn"
+  ) as HTMLButtonElement | null;
+
+  const uiPanel = document.getElementById(
+    "ui-panel"
+  ) as HTMLDivElement | null;
+
+  if (!toggleUiBtn || !uiPanel) {
+    throw new Error("UI panel toggle elements not found");
+  }
+
+  toggleUiBtn.addEventListener("click", () => {
+    uiPanel.classList.toggle("hidden");
   });
 }

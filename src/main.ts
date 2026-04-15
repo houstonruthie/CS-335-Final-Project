@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 import { setupMousePainting } from "./interaction/mouse";
-import { getUIElements, createUIState, bindUIState } from "./ui/controls";
+import { getUIElements, createUIState, bindUIState, bindUiPanelToggle } from "./ui/controls";
 import { bindTextureButtons, bindTextureUpload } from "./ui/textures";
 import { ROTATION_SPEED } from "./utils/constants";
 
@@ -15,20 +15,9 @@ if (!canvas) {
 const ui = getUIElements();
 const uiState = createUIState(ui);
 
-const {
-  scene,
-  camera,
-  renderer,
-  controls,
-  cube,
-  sphere,
-  cubePainters,
-  spherePainter,
-  cubeTextureCanvases,
-  sphereTextureCanvas,
-  cubeMaterials,
-  sphereMaterial
-} = setupScene(canvas);
+bindUiPanelToggle();
+
+const { scene, camera, renderer, controls, shapeManager } = setupScene(canvas);
 
 const sceneRaycaster = new SceneRaycaster();
 
@@ -51,32 +40,23 @@ scene.add(brushPreview);
 const previewRaycaster = new THREE.Raycaster();
 const previewMouse = new THREE.Vector2();
 
-function getActiveObject(): THREE.Object3D {
-  return uiState.objectType === "cube" ? cube : sphere;
+function getActiveObject(): THREE.Object3D | null {
+  const activeShape = shapeManager.getActiveShape();
+  return activeShape ? activeShape.mesh : null;
 }
 
 function updateVisibleObject(): void {
-  cube.visible = uiState.objectType === "cube";
-  sphere.visible = uiState.objectType === "sphere";
+  shapeManager.setActiveShape(uiState.shapeType);
   brushPreview.visible = false;
-}
-
-function updateActiveTexture(faceIndex?: number): void {
-  if (uiState.objectType === "cube") {
-    if (
-      faceIndex !== undefined &&
-      cubeMaterials[faceIndex] &&
-      cubeMaterials[faceIndex].map
-    ) {
-      cubeMaterials[faceIndex].map!.needsUpdate = true;
-    }
-  } else if (sphereMaterial.map) {
-    sphereMaterial.map.needsUpdate = true;
-  }
 }
 
 function updateBrushPreview(event: MouseEvent): void {
   const activeObject = getActiveObject();
+  if (!activeObject) {
+    brushPreview.visible = false;
+    return;
+  }
+
   const rect = canvas.getBoundingClientRect();
 
   previewMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -115,37 +95,19 @@ bindUIState(ui, uiState, updateVisibleObject);
 updateVisibleObject();
 
 bindTextureButtons({
-  getCurrentObjectType: () => uiState.objectType,
-  cubeTextureCanvases,
-  sphereTextureCanvas,
-  cubeMaterials,
-  sphereMaterial
+  shapeManager
 });
 
 bindTextureUpload({
-  getCurrentObjectType: () => uiState.objectType,
-  cubeTextureCanvases,
-  sphereTextureCanvas,
-  cubeMaterials,
-  sphereMaterial
+  shapeManager
 });
 
 setupMousePainting({
   canvas,
   camera,
   raycaster: sceneRaycaster,
-  sceneObjects: {
-    cube,
-    sphere,
-    cubePainters,
-    spherePainter,
-    cubeTextureCanvases,
-    sphereTextureCanvas,
-    cubeMaterials,
-    sphereMaterial
-  },
+  shapeManager,
   uiState,
-  updateTexture: updateActiveTexture,
   updateBrushPreview
 });
 
@@ -178,17 +140,19 @@ function animate(): void {
 
   const activeObject = getActiveObject();
 
-  if (rotateLeft) {
-    activeObject.rotation.y -= ROTATION_SPEED;
-  }
-  if (rotateRight) {
-    activeObject.rotation.y += ROTATION_SPEED;
-  }
-  if (rotateUp) {
-    activeObject.rotation.x -= ROTATION_SPEED;
-  }
-  if (rotateDown) {
-    activeObject.rotation.x += ROTATION_SPEED;
+  if (activeObject) {
+    if (rotateLeft) {
+      activeObject.rotation.y -= ROTATION_SPEED;
+    }
+    if (rotateRight) {
+      activeObject.rotation.y += ROTATION_SPEED;
+    }
+    if (rotateUp) {
+      activeObject.rotation.x -= ROTATION_SPEED;
+    }
+    if (rotateDown) {
+      activeObject.rotation.x += ROTATION_SPEED;
+    }
   }
 
   controls.update();
