@@ -1,23 +1,29 @@
-import "./style.css";
 import * as THREE from "three";
 import { setupScene } from "./scene/setupScene";
 import { SceneRaycaster } from "./interaction/raycaster";
 import { setupMousePainting } from "./interaction/mouse";
-import { getUIElements, createUIState, bindUIState, bindUiPanelToggle } from "./ui/controls";
+import { HistoryManager } from "./painting/history";
+import { getUIElements, createUIState, bindUIState, bindUiPanelToggle, bindClearButton, bindHistoryControls } from "./ui/controls";
 import { bindTextureButtons, bindTextureUpload } from "./ui/textures";
 import { ROTATION_SPEED } from "./utils/constants";
 
+// DOM
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (!canvas) {
   throw new Error("No canvas found");
 }
 
+// Scene
 const ui = getUIElements();
 const uiState = createUIState(ui);
 
-bindUiPanelToggle();
-
 const { scene, camera, renderer, controls, shapeManager } = setupScene(canvas);
+const historyManager = new HistoryManager(shapeManager);
+
+// UI bindings
+bindUiPanelToggle();
+bindClearButton(ui, shapeManager, historyManager);
+bindHistoryControls(ui, historyManager);
 
 const sceneRaycaster = new SceneRaycaster();
 
@@ -94,6 +100,7 @@ function updateBrushPreview(event: MouseEvent): void {
 bindUIState(ui, uiState, updateVisibleObject);
 updateVisibleObject();
 
+// Systems
 bindTextureButtons({
   shapeManager
 });
@@ -108,6 +115,7 @@ setupMousePainting({
   raycaster: sceneRaycaster,
   shapeManager,
   uiState,
+  historyManager,
   updateBrushPreview
 });
 

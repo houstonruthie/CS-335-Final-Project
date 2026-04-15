@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { TextureCanvas } from "./textureCanvas";
 import type { BrushType } from "./brush";
-import { getStrokeSteps, lerpUV } from "../interaction/uv";
 
 export class Painter {
   private textureCanvas: TextureCanvas;
@@ -29,17 +28,32 @@ export class Painter {
     opacity: number = 1,
     brushType: BrushType = "soft"
   ): void {
-    const steps = getStrokeSteps(
-      startUV,
-      endUV,
-      radius,
-      this.textureCanvas.getWidth()
-    );
+    let dx = endUV.x - startUV.x;
+    const dy = endUV.y - startUV.y;
+
+    // Handle wraparound at UV seam
+    if (Math.abs(dx) > 0.5) {
+      dx = dx > 0 ? dx - 1 : dx + 1;
+    }
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const uvStep = Math.max(0.001, radius / this.textureCanvas.getWidth() / 2);
+    const steps = Math.max(1, Math.ceil(distance / uvStep));
 
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const uv = lerpUV(startUV, endUV, t);
-      this.paint(uv.x, uv.y, color, radius, opacity, brushType);
+
+      let u = startUV.x + dx * t;
+      const v = startUV.y + dy * t;
+
+      // Wrap back into 0..1 range
+      if (u < 0) {
+        u += 1;
+      } else if (u > 1) {
+        u -= 1;
+      }
+
+      this.paint(u, v, color, radius, opacity, brushType);
     }
   }
 
@@ -49,19 +63,31 @@ export class Painter {
     radius: number = 20,
     strength: number = 0.6
   ): void {
-    const dx = endUV.x - startUV.x;
+    let dx = endUV.x - startUV.x;
     const dy = endUV.y - startUV.y;
-    const steps = getStrokeSteps(
-      startUV,
-      endUV,
-      radius,
-      this.textureCanvas.getWidth()
-    );
+
+    // Handle wraparound at UV seam
+    if (Math.abs(dx) > 0.5) {
+      dx = dx > 0 ? dx - 1 : dx + 1;
+    }
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const uvStep = Math.max(0.001, radius / this.textureCanvas.getWidth() / 2);
+    const steps = Math.max(1, Math.ceil(distance / uvStep));
 
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      const uv = lerpUV(startUV, endUV, t);
-      this.textureCanvas.smudgeAtUV(uv.x, uv.y, dx, dy, radius, strength);
+
+      let u = startUV.x + dx * t;
+      const v = startUV.y + dy * t;
+
+      if (u < 0) {
+        u += 1;
+      } else if (u > 1) {
+        u -= 1;
+      }
+
+      this.textureCanvas.smudgeAtUV(u, v, dx, dy, radius, strength);
     }
   }
 

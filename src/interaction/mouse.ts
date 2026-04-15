@@ -2,13 +2,15 @@ import * as THREE from "three";
 import { SceneRaycaster } from "./raycaster";
 import { ShapeManager } from "../scene/shapeManager";
 import type { UIState } from "../ui/controls";
-
+import { HistoryManager } from "../painting/history";
+  
 type MouseControllerDeps = {
   canvas: HTMLCanvasElement;
   camera: THREE.Camera;
   raycaster: SceneRaycaster;
   shapeManager: ShapeManager;
   uiState: UIState;
+  historyManager: HistoryManager;
   updateBrushPreview: (event: MouseEvent) => void;
 };
 
@@ -18,6 +20,7 @@ export function setupMousePainting({
   raycaster,
   shapeManager,
   uiState,
+  historyManager,
   updateBrushPreview
 }: MouseControllerDeps): void {
   let isPainting = false;
@@ -52,6 +55,7 @@ export function setupMousePainting({
 
     // Left click to paint
     if (event.button === 0) {
+      historyManager.saveSnapshot();
       isPainting = true;
 
       const intersection = raycaster.getIntersectionUV(

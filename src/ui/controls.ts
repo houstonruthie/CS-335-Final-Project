@@ -1,5 +1,7 @@
 import type { BrushType } from "../painting/brush";
 import type { ShapeType, ToolMode } from "../utils/constants";
+import type { ShapeManager } from "../scene/shapeManager";
+import { HistoryManager } from "../painting/history";
 
 export type UIElements = {
   shapeTypeSelect: HTMLSelectElement;
@@ -11,6 +13,9 @@ export type UIElements = {
   brushOpacitySlider: HTMLInputElement;
   brushOpacityValue: HTMLSpanElement;
   textureUpload: HTMLInputElement | null;
+  clearBtn: HTMLButtonElement;
+  undoBtn: HTMLButtonElement;
+  redoBtn: HTMLButtonElement;
 };
 
 export type UIState = {
@@ -32,6 +37,9 @@ export function getUIElements(): UIElements {
   const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
   const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
   const textureUpload = document.getElementById("textureUpload") as HTMLInputElement | null;
+  const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
+  const undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
+  const redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;
 
   if (
     !shapeTypeSelect ||
@@ -41,7 +49,10 @@ export function getUIElements(): UIElements {
     !brushSizeSlider ||
     !brushSizeValue ||
     !brushOpacitySlider ||
-    !brushOpacityValue
+    !brushOpacityValue ||
+    !clearBtn ||
+    !undoBtn ||
+    !redoBtn
   ) {
     throw new Error("Missing UI controls.");
   }
@@ -55,7 +66,10 @@ export function getUIElements(): UIElements {
     brushSizeValue,
     brushOpacitySlider,
     brushOpacityValue,
-    textureUpload
+    textureUpload,
+    clearBtn,
+    undoBtn,
+    redoBtn
   };
 }
 
@@ -118,5 +132,68 @@ export function bindUiPanelToggle(): void {
 
   toggleUiBtn.addEventListener("click", () => {
     uiPanel.classList.toggle("hidden");
+  });
+}
+
+export function bindClearButton(
+  elements: UIElements,
+  shapeManager: ShapeManager,
+  historyManager: HistoryManager
+): void {
+  elements.clearBtn.addEventListener("click", () => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to clear your texture?"
+    );
+
+    if (!isConfirmed) {
+      console.log("User clicked Cancel");
+      return;
+    }
+
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape) {
+      return;
+    }
+
+    historyManager.saveSnapshot();
+
+    activeShape.painters.forEach((painter) => {
+      painter.clear();
+    });
+
+    activeShape.materials.forEach((material) => {
+      if (material.map) {
+        material.map.needsUpdate = true;
+      }
+    });
+  });
+}
+
+export function bindHistoryControls(
+  elements: UIElements,
+  historyManager: HistoryManager
+): void {
+  elements.undoBtn.addEventListener("click", () => {
+    historyManager.undo();
+  });
+
+  elements.redoBtn.addEventListener("click", () => {
+    historyManager.redo();
+  });
+
+  window.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (!event.ctrlKey) {
+      return;
+    }
+
+    const key = event.key.toLowerCase();
+
+    if (key === "z" && !event.shiftKey) {
+      event.preventDefault();
+      historyManager.undo();
+    } else if (key === "z" && event.shiftKey) {
+      event.preventDefault();
+      historyManager.redo();
+    }
   });
 }

@@ -183,4 +183,12 @@ export class TextureCanvas {
   public getHeight(): number {
     return this.height;
   }
+
+  public getImageData(): ImageData {
+    return this.ctx.getImageData(0, 0, this.width, this.height);
+  }
+
+  public setImageData(imageData: ImageData): void {
+    this.ctx.putImageData(imageData, 0, 0);
+  }
 }
