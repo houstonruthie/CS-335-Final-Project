@@ -1,4 +1,4 @@
-export type BrushType = "soft" | "hardbrush" | "spray";
+import type { BrushType } from "./brush";
 
 export class TextureCanvas {
   private canvas: HTMLCanvasElement;
@@ -84,7 +84,7 @@ export class TextureCanvas {
     this.ctx.globalAlpha = opacity;
     this.ctx.fillStyle = color;
     this.ctx.beginPath();
-    this.ctx.arc(x, y, radius*.9, 0, Math.PI * 2);
+    this.ctx.arc(x, y, radius * 0.9, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
   }
@@ -103,10 +103,7 @@ export class TextureCanvas {
 
     for (let i = 0; i < dots; i++) {
       const angle = Math.random() * Math.PI * 2;
-
-      // Keeps dots mostly within the same visual footprint as other brushes
       const distance = Math.sqrt(Math.random()) * radius * 0.9;
-
       const px = x + Math.cos(angle) * distance;
       const py = y + Math.sin(angle) * distance;
 

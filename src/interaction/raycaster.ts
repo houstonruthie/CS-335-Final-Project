@@ -10,33 +10,33 @@ export class SceneRaycaster {
   }
 
   public getIntersectionUV(
-  event: MouseEvent,
-  canvas: HTMLCanvasElement,
-  camera: THREE.Camera,
-  object: THREE.Object3D
-): { uv: THREE.Vector2; faceIndex: number } | null {
-  const rect = canvas.getBoundingClientRect();
+    event: MouseEvent,
+    canvas: HTMLCanvasElement,
+    camera: THREE.Camera,
+    object: THREE.Object3D
+  ): { uv: THREE.Vector2; faceIndex: number } | null {
+    const rect = canvas.getBoundingClientRect();
 
-  this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-  this.raycaster.setFromCamera(this.mouse, camera);
+    this.raycaster.setFromCamera(this.mouse, camera);
 
-  const intersects = this.raycaster.intersectObject(object);
+    const intersects = this.raycaster.intersectObject(object);
 
-  if (intersects.length === 0) {
-    return null;
+    if (intersects.length === 0) {
+      return null;
+    }
+
+    const hit = intersects[0];
+
+    if (!hit.uv || hit.faceIndex == null) {
+      return null;
+    }
+
+    return {
+      uv: hit.uv.clone(),
+      faceIndex: Math.floor(hit.faceIndex / 2)
+    };
   }
-
-  const hit = intersects[0];
-
-  if (!hit.uv || hit.faceIndex == null) {
-    return null;
-  }
-
-  return {
-    uv: hit.uv.clone(),
-    faceIndex: Math.floor(hit.faceIndex / 2)
-  };
-}
 }
