@@ -8,6 +8,7 @@ export type UIElements = {
   toolModeSelect: HTMLSelectElement;
   brushTypeSelect: HTMLSelectElement;
   colorPicker: HTMLInputElement;
+  prevColor: HTMLButtonElement;
   brushSizeSlider: HTMLInputElement;
   brushSizeValue: HTMLSpanElement;
   brushOpacitySlider: HTMLInputElement;
@@ -23,6 +24,7 @@ export type UIState = {
   toolMode: ToolMode;
   brushType: BrushType;
   brushColor: string;
+  prevColor: string;
   brushSize: number;
   brushOpacity: number;
 };
@@ -32,6 +34,7 @@ export function getUIElements(): UIElements {
   const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
   const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
   const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
+  const prevColor = document.getElementById("prevColor") as HTMLButtonElement;
   const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
   const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
   const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
@@ -48,6 +51,7 @@ export function getUIElements(): UIElements {
     !toolModeSelect ||
     !brushTypeSelect ||
     !colorPicker ||
+    !prevColor ||
     !brushSizeSlider ||
     !brushSizeValue ||
     !brushOpacitySlider ||
@@ -64,6 +68,7 @@ export function getUIElements(): UIElements {
     toolModeSelect,
     brushTypeSelect,
     colorPicker,
+    prevColor,
     brushSizeSlider,
     brushSizeValue,
     brushOpacitySlider,
@@ -81,6 +86,7 @@ export function createUIState(elements: UIElements): UIState {
     toolMode: elements.toolModeSelect.value as ToolMode,
     brushType: elements.brushTypeSelect.value as BrushType,
     brushColor: elements.colorPicker.value,
+    prevColor: elements.prevColor.style.backgroundColor,
     brushSize: Number(elements.brushSizeSlider.value),
     brushOpacity: Number(elements.brushOpacitySlider.value) / 100
   };
@@ -103,10 +109,23 @@ export function bindUIState(
   elements.brushTypeSelect.addEventListener("change", () => {
     state.brushType = elements.brushTypeSelect.value as BrushType;
   });
+    let lastCommittedColor = state.brushColor;
+    elements.colorPicker.addEventListener("change", () => {
+        state.prevColor = lastCommittedColor;
 
-  elements.colorPicker.addEventListener("input", () => {
-    state.brushColor = elements.colorPicker.value;
-  });
+        lastCommittedColor = elements.colorPicker.value;
+        state.brushColor = elements.colorPicker.value;
+
+        elements.prevColor.style.backgroundColor = state.prevColor;
+    });
+
+    elements.prevColor.addEventListener("click", () => {
+        const temp = state.brushColor;
+        state.brushColor = state.prevColor;
+
+        elements.colorPicker.value = state.brushColor;
+        elements.prevColor.style.backgroundColor = temp;
+    });
 
   elements.brushSizeSlider.addEventListener("input", () => {
     state.brushSize = Number(elements.brushSizeSlider.value);

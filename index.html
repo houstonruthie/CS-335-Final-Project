@@ -13,67 +13,70 @@
   <button id="toggleUiBtn">☰</button>
 
   <div id="ui-panel" class="hidden">
-    <label for="shapeType">Shape</label>
-    <select id="shapeType">
-      <option value="cube">Cube</option>
-      <option value="sphere">Sphere</option>
-      <option value="cylinder">Cylinder</option>
-      <option value="cone">Cone</option>
-      <option value="torus">Torus</option>
-    </select>
+      <label for="shapeType">Shape</label>
+      <select id="shapeType">
+          <option value="cube">Cube</option>
+          <option value="sphere">Sphere</option>
+          <option value="cylinder">Cylinder</option>
+          <option value="cone">Cone</option>
+          <option value="torus">Torus</option>
+      </select>
 
-    <label for="toolMode">Tool</label>
-    <select id="toolMode">
-      <option value="paint">Paint</option>
-      <option value="finger">Finger</option>
-    </select>
+      <label for="toolMode">Tool</label>
+      <select id="toolMode">
+          <option value="paint">Paint</option>
+          <option value="finger">Finger</option>
+      </select>
 
-    <label for="brushType">Brush Style</label>
-    <select id="brushType">
-      <option value="soft">Soft Brush</option>
-      <option value="hardbrush">Hard Brush</option>
-      <option value="spray">Spray Paint</option>
-    </select>
+      <label for="brushType">Brush Style</label>
+      <select id="brushType">
+          <option value="soft">Soft Brush</option>
+          <option value="hardbrush">Hard Brush</option>
+          <option value="spray">Spray Paint</option>
+      </select>
 
-    <label for="colorPicker">Brush Color</label>
-    <input type="color" id="colorPicker" value="#00aaff" />
+      <label for="colorPicker">Brush Color</label>
+      <input type="color" id="colorPicker" value="#00aaff" />
 
-    <label for="brushSize">Brush Size</label>
-    <span id="brushSizeValue">30</span>
-    <input type="range" id="brushSize" min="5" max="100" value="30" />
+      <label for="prevColor">Previous Color</label>
+      <input type="button" id="prevColor" style="background-color: #00aaff;" />
 
-    <label for="opacity">Opacity</label>
-    <span id="brushOpacityValue">100</span>
-    <input type="range" id="opacity" min="0" max="100" value="100" />
+      <label for="brushSize">Brush Size</label>
+      <span id="brushSizeValue">30</span>
+      <input type="range" id="brushSize" min="5" max="100" value="30" />
 
-    <label>Edit</label>
-    <div id="edit-buttons">
-      <button id="undoBtn">↶ Undo</button>
-      <button id="redoBtn">↷ Redo</button>
-      <button id="clearBtn">🗑 Clear</button>
-    </div>
-    
-    <div id="texture-buttons">
-      <button id="applyBrickBtn" class="texture-button" title="Brick Texture">
-        <img src="./src/assets/brick.jpg" alt="Brick texture" />
-      </button>
-      <button id="applyFabricBtn" class="texture-button" title="Fabric Stripes Texture">
-        <img src="./src/assets/fabric-stripes.jpg" alt="Fabric stripes texture" />
-      </button>
-      <button id="applyWaterBtn" class="texture-button" title="Water Texture">
-        <img src="./src/assets/water.jpg" alt="Water texture" />
-      </button>
-      <button id="applyRockPathBtn" class="texture-button" title="Rock Path Texture">
-        <img src="./src/assets/rock-path.jpg" alt="Rock path texture" />
-      </button>
-      <button id="applyAbstractBtn" class="texture-button" title="Abstract Stripes Texture">
-        <img src="./src/assets/abstract-stripes.jpg" alt="Abstract stripes texture" />
-      </button>
-    </div>
-    <div id="texture-input">
-      <label for="textureUpload">Custom Texture</label>
-      <input type="file" id="textureUpload" accept="image/*" />
-    </div>
+      <label for="opacity">Opacity</label>
+      <span id="brushOpacityValue">100</span>
+      <input type="range" id="opacity" min="0" max="100" value="100" />
+
+      <label>Edit</label>
+      <div id="edit-buttons">
+          <button id="undoBtn">↶ Undo</button>
+          <button id="redoBtn">↷ Redo</button>
+          <button id="clearBtn">🗑 Clear</button>
+      </div>
+
+      <div id="texture-buttons">
+          <button id="applyBrickBtn" class="texture-button" title="Brick Texture">
+              <img src="./src/assets/brick.jpg" alt="Brick texture" />
+          </button>
+          <button id="applyFabricBtn" class="texture-button" title="Fabric Stripes Texture">
+              <img src="./src/assets/fabric-stripes.jpg" alt="Fabric stripes texture" />
+          </button>
+          <button id="applyWaterBtn" class="texture-button" title="Water Texture">
+              <img src="./src/assets/water.jpg" alt="Water texture" />
+          </button>
+          <button id="applyRockPathBtn" class="texture-button" title="Rock Path Texture">
+              <img src="./src/assets/rock-path.jpg" alt="Rock path texture" />
+          </button>
+          <button id="applyAbstractBtn" class="texture-button" title="Abstract Stripes Texture">
+              <img src="./src/assets/abstract-stripes.jpg" alt="Abstract stripes texture" />
+          </button>
+      </div>
+      <div id="texture-input">
+          <label for="textureUpload">Custom Texture</label>
+          <input type="file" id="textureUpload" accept="image/*" />
+      </div>
   </div>
 
   <canvas id="canvas"></canvas>
