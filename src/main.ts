@@ -6,6 +6,8 @@ import { SceneRaycaster } from "./interaction/raycaster";
 import { setupScene } from "./scene/setupScene";
 import { bindTextureButtons, bindTextureUpload } from "./ui/textures";
 import { ROTATION_SPEED } from "./utils/constants";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+
 
 // DOM
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -48,6 +50,7 @@ scene.add(brushPreview);
 
 const previewRaycaster = new THREE.Raycaster();
 const previewMouse = new THREE.Vector2();
+const exporter = new GLTFExporter();
 
 function getActiveObject(): THREE.Object3D | null {
   const activeShape = shapeManager.getActiveShape();
@@ -282,3 +285,28 @@ window.addEventListener("keydown", (event) => {
         saveImg();
     }
 });
+
+const exportBtn = document.getElementById("exportBtn") as HTMLButtonElement;
+function exportAsGLB(): void {
+    exporter.parse(
+        scene,
+        (result) => {
+            const blob = new Blob([result as ArrayBuffer], {
+                type: "model/gltf-binary"
+            });
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            const fileName: string | null = prompt("Enter desired file name: ");
+            if (fileName !== null) {
+                link.download = fileName + ".glb";
+                link.click();
+            } else {
+                return;
+            }
+        },
+        () => { alert("Export failed"); },
+        { binary: true }
+    );
+}
+exportBtn.addEventListener("click", exportAsGLB);
