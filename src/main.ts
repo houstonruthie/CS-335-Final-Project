@@ -253,3 +253,32 @@ window.addEventListener("keydown", (event) => {
         }
     }
 });
+function saveImg(): void {
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape) return;
+
+    const tc = activeShape.textureCanvases[0];
+    const canvas = tc.getCanvas();
+
+    const dataURL = canvas.toDataURL("image/png");
+
+    const link = document.createElement("a");
+    link.href = dataURL;
+    const fileName: string | null = prompt("Enter desired file name: ");
+
+    if (fileName !== null) {
+        link.download = fileName + ".png";
+    } else {
+        return;
+    }
+    link.click();
+}
+const saveBtn = document.getElementById("saveBtn") as HTMLButtonElement;
+saveBtn.addEventListener("click", saveImg);
+
+window.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        saveImg();
+    }
+});
