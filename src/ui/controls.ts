@@ -17,6 +17,9 @@ export type UIElements = {
   clearBtn: HTMLButtonElement;
   undoBtn: HTMLButtonElement;
   redoBtn: HTMLButtonElement;
+  extraTextureButtons: HTMLDivElement;
+  cubeTextureTitle: HTMLDivElement;
+  firstTextureLabel: HTMLLabelElement;
 };
 
 export type UIState = {
@@ -30,35 +33,42 @@ export type UIState = {
 };
 
 export function getUIElements(): UIElements {
-  const shapeTypeSelect = document.getElementById("shapeType") as HTMLSelectElement;
-  const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
-  const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
-  const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
-  const prevColor = document.getElementById("prevColor") as HTMLButtonElement;
-  const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
-  const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
-  const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
-  const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
-  const textureUpload = document.getElementById("textureUpload") as HTMLInputElement | null;
-  const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
-  const undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
-  const redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;
+    const shapeTypeSelect = document.getElementById("shapeType") as HTMLSelectElement;
+    const toolModeSelect = document.getElementById("toolMode") as HTMLSelectElement;
+    const brushTypeSelect = document.getElementById("brushType") as HTMLSelectElement;
+    const colorPicker = document.getElementById("colorPicker") as HTMLInputElement;
+    const prevColor = document.getElementById("prevColor") as HTMLButtonElement;
+    const brushSizeSlider = document.getElementById("brushSize") as HTMLInputElement;
+    const brushSizeValue = document.getElementById("brushSizeValue") as HTMLSpanElement;
+    const brushOpacitySlider = document.getElementById("opacity") as HTMLInputElement;
+    const brushOpacityValue = document.getElementById("brushOpacityValue") as HTMLSpanElement;
+    const textureUpload = document.getElementById("textureUpload") as HTMLInputElement | null;
+    const clearBtn = document.getElementById("clearBtn") as HTMLButtonElement;
+    const undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
+    const redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;
+    const extraTextureButtons = document.getElementById("additionalTextureButtons") as HTMLDivElement;
+    const cubeTextureTitle = document.getElementById("cubeTextureTitle") as HTMLDivElement;
+    const firstTextureLabel = document.getElementById("firstTextureLabel") as HTMLLabelElement;
 
 
 
-  if (
-    !shapeTypeSelect ||
-    !toolModeSelect ||
-    !brushTypeSelect ||
-    !colorPicker ||
-    !prevColor ||
-    !brushSizeSlider ||
-    !brushSizeValue ||
-    !brushOpacitySlider ||
-    !brushOpacityValue ||
-    !clearBtn ||
-    !undoBtn ||
-    !redoBtn
+
+    if (
+        !shapeTypeSelect ||
+        !toolModeSelect ||
+        !brushTypeSelect ||
+        !colorPicker ||
+        !prevColor ||
+        !brushSizeSlider ||
+        !brushSizeValue ||
+        !brushOpacitySlider ||
+        !brushOpacityValue ||
+        !clearBtn ||
+        !undoBtn ||
+        !redoBtn ||
+        !extraTextureButtons ||
+        !cubeTextureTitle ||
+        !firstTextureLabel
   ) {
     throw new Error("Missing UI controls.");
   }
@@ -76,7 +86,10 @@ export function getUIElements(): UIElements {
     textureUpload,
     clearBtn,
     undoBtn,
-    redoBtn
+    redoBtn,
+    extraTextureButtons,
+    cubeTextureTitle,
+    firstTextureLabel
   };
 }
 
@@ -99,6 +112,9 @@ export function bindUIState(
 ): void {
   elements.shapeTypeSelect.addEventListener("change", () => {
     state.shapeType = elements.shapeTypeSelect.value as ShapeType;
+      elements.extraTextureButtons.style.display = state.shapeType == "cube" ? "block" : "none";
+      elements.cubeTextureTitle.style.display = state.shapeType == "cube" ? "block" : "none";
+      elements.firstTextureLabel.textContent = state.shapeType == "cube" ? "Right Face Texture" : "Custom Texture";
     onObjectChange();
   });
 

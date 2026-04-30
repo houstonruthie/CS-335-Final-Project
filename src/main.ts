@@ -1,4 +1,4 @@
-import * as THREE from "three";
+﻿import * as THREE from "three";
 import { setupMousePainting } from "./interaction/mouse";
 import { HistoryManager } from "./painting/history";
 import { getUIElements, createUIState, bindUIState, bindUiPanelToggle, bindClearButton, bindHistoryControls } from "./ui/controls";
@@ -276,13 +276,32 @@ function saveImg(): void {
     }
     link.click();
 }
+
+function saveFaces(): void {
+    const shape = shapeManager.getActiveShape();
+    if (!shape) return;
+    const fileName: string | null = prompt("Enter desired file name: ");
+    shape.textureCanvases.forEach((tc, i) => {
+        const dataURL = tc.getCanvas().toDataURL("image/png");
+
+        const a = document.createElement("a");
+        a.href = dataURL;
+        if (fileName !== null) {
+            a.download = `${fileName}-${i}.png`;
+            a.click();
+        } else {
+            return;
+        }
+    });
+}
+
 const saveBtn = document.getElementById("saveBtn") as HTMLButtonElement;
 saveBtn.addEventListener("click", saveImg);
 
 window.addEventListener("keydown", (event) => {
     if (event.ctrlKey && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        saveImg();
+        saveFaces();
     }
 });
 

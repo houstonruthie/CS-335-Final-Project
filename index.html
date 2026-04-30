@@ -36,7 +36,7 @@
       </select>
 
       <label for="colorPicker">Brush Color</label>
-      <input type="color" id="colorPicker" value="#00aaff" />
+      <input type="color" id="colorPicker" style="min-height: 50px;" value="#00aaff" />
 
       <label for="prevColor">Previous Color</label>
       <input type="button" id="prevColor" style="background-color: #00aaff;" />
@@ -79,8 +79,35 @@
           </button>
       </div>
       <div id="texture-input">
-          <label for="textureUpload">Custom Texture</label>
-          <input type="file" id="textureUpload" accept="image/*" />
+          <div id="cubeTextureTitle">
+              <label>Custom Textures</label>
+              <br />
+              <br />
+          </div>
+          <label for="textureUpload0" id="firstTextureLabel">Right Face Texture</label>
+          <input type="file" id="textureUpload0" accept="image/*" />
+          <br />
+          <br />
+          <div id="additionalTextureButtons">
+          <label for="textureUpload1">Left Face Texture</label>
+          <input type="file" id="textureUpload1" accept="image/*" />
+          <br />
+          <br />
+          <label for="textureUpload2">Top Face Texture</label>
+          <input type="file" id="textureUpload2" accept="image/*" />
+          <br />
+          <br />
+          <label for="textureUpload3">Bottom Face Texture</label>
+          <input type="file" id="textureUpload3" accept="image/*" />
+          <br />
+          <br />
+          <label for="textureUpload4">Front Face Texture</label>
+          <input type="file" id="textureUpload4" accept="image/*" />
+          <br />
+          <br />
+          <label for="textureUpload5" id="firstTextureLabel">Back Face Texture</label>
+          <input type="file" id="textureUpload5" accept="image/*" />
+          </div>
       </div>
   </div>
 

@@ -1,3 +1,4 @@
+import { Shape } from "three";
 import { ShapeManager } from "../scene/shapeManager";
 
 type TextureButtonConfig = {
@@ -31,34 +32,57 @@ function drawImageToCanvas(
 }
 
 function applyImageToActiveShape(
-  img: HTMLImageElement,
-  shapeManager: ShapeManager
+    img: HTMLImageElement,
+    shapeManager: ShapeManager,
+    faceNum: number
 ): void {
-  const activeShape = shapeManager.getActiveShape();
-  if (!activeShape) {
-    return;
-  }
+    const activeShape = shapeManager.getActiveShape();
+    if (!activeShape) return;
 
-  activeShape.textureCanvases.forEach((textureCanvas) => {
-    const ctx = textureCanvas.getCanvas().getContext("2d");
-    if (!ctx) {
-      return;
+    // apply image to every face
+    if (faceNum == -1) {
+        activeShape.textureCanvases.forEach((textureCanvas) => {
+            const ctx = textureCanvas.getCanvas().getContext("2d");
+            if (!ctx) {
+                return;
+            }
+
+            drawImageToCanvas(
+                ctx,
+                img,
+                textureCanvas.getWidth(),
+                textureCanvas.getHeight()
+            );
+        });
+
+        activeShape.materials.forEach((material) => {
+            if (material.map) {
+                material.map.needsUpdate = true;
+            }
+        });
     }
+    else {
+        const textureCanvas = activeShape.textureCanvases[faceNum];
+        if (!textureCanvas) return;
 
-    drawImageToCanvas(
-      ctx,
-      img,
-      textureCanvas.getWidth(),
-      textureCanvas.getHeight()
-    );
-  });
+        const ctx = textureCanvas.getCanvas().getContext("2d");
+        if (!ctx) return;
 
-  activeShape.materials.forEach((material) => {
-    if (material.map) {
-      material.map.needsUpdate = true;
+        drawImageToCanvas(
+            ctx,
+            img,
+            textureCanvas.getWidth(),
+            textureCanvas.getHeight()
+        );
+
+        const material = activeShape.materials[faceNum];
+        if (material?.map) {
+            material.map.needsUpdate = true;
+        }
     }
-  });
+    
 }
+
 
 export function bindTextureButtons({
   shapeManager
@@ -95,7 +119,7 @@ export function bindTextureButtons({
     button.addEventListener("click", async () => {
       try {
         const img = await loadImage(assetUrl);
-        applyImageToActiveShape(img, shapeManager);
+        applyImageToActiveShape(img, shapeManager,-1);
       } catch (error) {
         console.error(error);
       }
@@ -106,20 +130,33 @@ export function bindTextureButtons({
 export function bindTextureUpload({
   shapeManager
 }: TextureBindings): void {
-  const textureUpload = document.getElementById(
-    "textureUpload"
-  ) as HTMLInputElement | null;
-
-  if (!textureUpload) {
+  const textureUpload0 = document.getElementById(
+    "textureUpload0"
+    ) as HTMLInputElement | null;
+    const textureUpload1 = document.getElementById(
+        "textureUpload1"
+    ) as HTMLInputElement | null;
+    const textureUpload2 = document.getElementById(
+        "textureUpload2"
+    ) as HTMLInputElement | null;
+    const textureUpload3 = document.getElementById(
+        "textureUpload3"
+    ) as HTMLInputElement | null;
+    const textureUpload4 = document.getElementById(
+        "textureUpload4"
+    ) as HTMLInputElement | null;
+    const textureUpload5 = document.getElementById(
+        "textureUpload5"
+    ) as HTMLInputElement | null;
+  if (!(textureUpload0 && textureUpload1 && textureUpload2 && textureUpload3 && textureUpload4 && textureUpload5)) {
     return;
   }
 
-  textureUpload.addEventListener("change", (event: Event) => {
+  textureUpload0.addEventListener("change", (event: Event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) {
       return;
     }
-
     const reader = new FileReader();
 
     reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
@@ -131,7 +168,7 @@ export function bindTextureUpload({
       const img = new Image();
 
       img.onload = () => {
-        applyImageToActiveShape(img, shapeManager);
+        applyImageToActiveShape(img, shapeManager, 0);
       };
 
       img.onerror = () => {
@@ -146,6 +183,172 @@ export function bindTextureUpload({
     };
 
     reader.readAsDataURL(file);
-    textureUpload.value = "";
+    textureUpload0.value = "";
   });
+
+    textureUpload1.addEventListener("change", (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+            const dataUrl = loadEvent.target?.result;
+            if (typeof dataUrl !== "string") {
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+                applyImageToActiveShape(img, shapeManager, 1);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load uploaded texture image.");
+            };
+
+            img.src = dataUrl;
+        };
+
+        reader.onerror = () => {
+            console.error("Failed to read uploaded texture file.");
+        };
+
+        reader.readAsDataURL(file);
+        textureUpload1.value = "";
+    });
+    textureUpload2.addEventListener("change", (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+            const dataUrl = loadEvent.target?.result;
+            if (typeof dataUrl !== "string") {
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+                applyImageToActiveShape(img, shapeManager, 2);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load uploaded texture image.");
+            };
+
+            img.src = dataUrl;
+        };
+
+        reader.onerror = () => {
+            console.error("Failed to read uploaded texture file.");
+        };
+
+        reader.readAsDataURL(file);
+        textureUpload2.value = "";
+    });
+    textureUpload3.addEventListener("change", (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+            const dataUrl = loadEvent.target?.result;
+            if (typeof dataUrl !== "string") {
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+                applyImageToActiveShape(img, shapeManager, 3);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load uploaded texture image.");
+            };
+
+            img.src = dataUrl;
+        };
+
+        reader.onerror = () => {
+            console.error("Failed to read uploaded texture file.");
+        };
+
+        reader.readAsDataURL(file);
+        textureUpload3.value = "";
+    });
+    textureUpload4.addEventListener("change", (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+            const dataUrl = loadEvent.target?.result;
+            if (typeof dataUrl !== "string") {
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+                applyImageToActiveShape(img, shapeManager, 4);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load uploaded texture image.");
+            };
+
+            img.src = dataUrl;
+        };
+
+        reader.onerror = () => {
+            console.error("Failed to read uploaded texture file.");
+        };
+
+        reader.readAsDataURL(file);
+        textureUpload4.value = "";
+    });
+    textureUpload5.addEventListener("change", (event: Event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+
+        reader.onload = (loadEvent: ProgressEvent<FileReader>) => {
+            const dataUrl = loadEvent.target?.result;
+            if (typeof dataUrl !== "string") {
+                return;
+            }
+
+            const img = new Image();
+
+            img.onload = () => {
+                applyImageToActiveShape(img, shapeManager, 5);
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load uploaded texture image.");
+            };
+
+            img.src = dataUrl;
+        };
+
+        reader.onerror = () => {
+            console.error("Failed to read uploaded texture file.");
+        };
+
+        reader.readAsDataURL(file);
+        textureUpload5.value = "";
+    });
 }
